@@ -5,6 +5,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * A seed round-trips only if it survived JSON parsing intact. fal returns seeds
+ * far past Number.MAX_SAFE_INTEGER, where the value JavaScript holds is already
+ * approximate — re-sending one would quietly render something different from
+ * the image it is labelled with.
+ *
+ * Lives here rather than in jobs.ts because client components need it, and
+ * importing a value (not just a type) from jobs.ts drags Prisma and
+ * better-sqlite3 into the browser bundle.
+ */
+export function isReusableSeed(seed: string | null | undefined): boolean {
+  if (!seed) return false;
+  const parsed = Number(seed);
+  return Number.isSafeInteger(parsed) && parsed >= 0;
+}
+
 export function formatDuration(ms: number | null | undefined): string {
   if (!ms || ms < 0) return "—";
   if (ms < 1000) return `${ms} ms`;

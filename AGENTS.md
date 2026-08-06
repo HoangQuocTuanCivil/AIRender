@@ -39,6 +39,10 @@ These bit during the initial build; they are not in most training data.
 
 **Fonts** — Geist has no `vietnamese` subset. The UI is Vietnamese, so the sans font is Inter. Do not swap it back.
 
+**Seeds are text, not integers.** fal returns seeds far past `Number.MAX_SAFE_INTEGER` (observed 16230947957082601000). Stored as `Int`, reading the row back throws `P2023` before Prisma even sees it — and `node:sqlite` throws too, so the row becomes unreadable by any route. The column is `String?`; `isReusableSeed` in `utils.ts` gates whether one can be fed back in, since anything past the safe range came back approximate and would render something other than what it labels.
+
+**Client/server boundary.** `jobs.ts` imports Prisma, so client components may only `import type` from it. Importing a *value* (even a pure helper) drags `better-sqlite3` into the browser bundle and the build fails with `Can't resolve 'fs'`. Shared runtime helpers belong in `utils.ts`.
+
 **Custom properties resolve where they are declared.** `--module-soft` is derived from `--module` on `.vx-shell` itself, not on `:root`, because a `var()` inside a custom property is substituted against the element carrying the declaration. Setting `--module-soft` inline alongside `--module` is what broke dark mode once — the inline light tint outranked the dark override and produced white-on-white.
 
 ## Architecture rules

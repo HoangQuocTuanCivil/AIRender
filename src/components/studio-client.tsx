@@ -6,6 +6,7 @@ import { Sparkles, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SerialisedRender } from "@/lib/jobs";
 import { RESOLUTION_TIERS, getResolution } from "@/lib/presets";
+import { isReusableSeed } from "@/lib/utils";
 import { ImageDropzone, type SourceImage } from "@/components/image-dropzone";
 import {
   ControlPanel,
@@ -123,7 +124,9 @@ export function StudioClient() {
           guidanceScale: data.guidanceScale,
           steps: data.steps,
           numImages: data.numImages,
-          seed: data.seed,
+          // Only prefill a seed that can be re-sent faithfully; an out-of-range
+          // one would silently render something different from what it labels.
+          seed: isReusableSeed(data.seed) ? Number(data.seed) : null,
           resolutionId:
             RESOLUTION_TIERS.find((t) => t.maxSide === data.maxSide)?.id ??
             DEFAULT_SETTINGS.resolutionId,

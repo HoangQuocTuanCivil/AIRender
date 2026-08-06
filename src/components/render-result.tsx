@@ -70,8 +70,9 @@ export function RenderResult({
         </div>
 
         <p className="max-w-sm text-center text-[11px] leading-relaxed text-ink-500">
-          Một lần render thường mất 20–60 giây tuỳ hàng đợi của provider. Bạn có
-          thể rời trang — kết quả vẫn được lưu vào Thư viện.
+          Nano Banana thường xong sau ~30 giây. FLUX + ControlNet chậm hơn nhiều
+          và có thể mất vài phút khi endpoint nguội. Bạn có thể rời trang — kết
+          quả vẫn được lưu vào Thư viện.
         </p>
       </div>
     );

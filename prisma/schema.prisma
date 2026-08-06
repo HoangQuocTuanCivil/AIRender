@@ -39,8 +39,11 @@ model Render {
   strength        Float
   guidanceScale   Float
   steps           Int
-  numImages       Int
-  seed            Int?
+  numImages Int
+  /// Stored as text, not Int. fal returns seeds far outside JavaScript's safe
+  /// integer range (observed: 3156009610848450000), and reading such a row back
+  /// throws before Prisma even gets to it.
+  seed String?
   width           Int
   height          Int
   /// Longest requested output side in pixels.

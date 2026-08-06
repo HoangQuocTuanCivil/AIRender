@@ -26,16 +26,23 @@ Chỉ cần **một** `FAL_KEY` (https://fal.ai/dashboard/keys) — nó chạy �
 | Cơ chế | Trích depth/edge map từ ảnh gốc rồi **vẽ lại** bám theo map | Nhận thẳng ảnh + **câu lệnh chỉnh sửa**, giữ nguyên phần không được nhắc |
 | Núm vặn độ bám | Có (0–1) | Không — chỉ điều khiển bằng lời |
 | Prompt | Mô tả cảnh | Câu lệnh (app tự đổi văn phong khi bạn đổi engine) |
-| Giá tham khảo | ~$0.025/ảnh | ~$0.04/ảnh |
+| Giá | ~$0.025/ảnh | $0.15/ảnh (1K–2K), $0.30 (4K) |
+| **Thời gian đo thực tế** | **vài phút** khi endpoint nguội | **~28 giây** |
+
+> **Kết quả đo thực tế trên cùng một ảnh nguồn** (model 3D clay chưa gán vật liệu, cầu cạn 6 nhịp):
+> FLUX + ControlNet Depth mất hơn 9 phút và trả về ảnh **gần như y hệt ảnh vào** — depth map trích từ ảnh clay phẳng gần như không có thông tin để bám. Nano Banana Pro mất 28 giây và cho ra ảnh render hoàn chỉnh, đúng cảnh núi đá vôi, trụ đều nhịp, chiều cao dầm không đổi.
+>
+> Với ảnh 3D chưa gán vật liệu — tức phần lớn công việc của bạn — **Nano Banana Pro đáng đồng tiền** dù đắt gấp 6 lần.
 
 **Điểm quyết định:** ước lượng chiều sâu đơn ảnh gần như **không ghi nhận được cấu kiện mảnh** — dây văng, dây tiếp xúc đường sắt, lan can, cột tiêu đều quá mỏng. Với cầu dây văng, ControlNet Depth đưa cho AI một cái tháp và một mặt cầu rồi để nó **tự bịa toàn bộ hệ dây**. Model chỉnh sửa thì nhìn thấy dây thật.
 
-| Loại công trình | Engine nên dùng |
+| Nguồn ảnh | Engine nên dùng |
 |---|---|
-| Cầu dây văng, cầu treo, đường sắt có catenary | **Nano Banana Pro**, hoặc FLUX + **Canny** |
-| Cao tốc, nút giao, cầu cạn, hầm, đường miền núi | **FLUX + Depth** — khối lớn, cần núm vặn |
-| Bản vẽ mặt đứng CAD | **FLUX + Canny** |
-| Cần giữ tuyệt đối, không cho bịa gì | **Nano Banana Pro** |
+| **Ảnh 3D clay chưa gán vật liệu** (Civil 3D, OpenRoads, SketchUp) | **Nano Banana Pro** — đã đo, chênh lệch rất lớn |
+| Cầu dây văng, cầu treo, đường sắt có catenary | **Nano Banana Pro** — cấu kiện mảnh depth map không ghi nhận được |
+| Ảnh 3D **đã có vật liệu và đổ bóng**, chỉ cần nâng cấp chân thực | FLUX + Depth — rẻ hơn 6 lần, đủ dùng |
+| Bản vẽ mặt đứng CAD (line art) | FLUX + Canny |
+| Thử prompt, chọn góc trước khi render bản đẹp | FLUX ở mức Nhanh — rẻ nhất |
 
 Engine thứ ba — **FLUX Tools trên Replicate** — là phương án dự phòng khi fal.ai gặp sự cố, cần `REPLICATE_API_TOKEN` riêng.
 

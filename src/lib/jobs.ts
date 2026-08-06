@@ -96,7 +96,7 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
       guidanceScale: input.guidanceScale,
       steps: input.steps,
       numImages: input.numImages,
-      seed: input.seed ?? null,
+      seed: input.seed != null ? String(input.seed) : null,
       width: input.width,
       height: input.height,
       maxSide: input.maxSide,
@@ -197,7 +197,7 @@ async function processRender(
       data: {
         status: "succeeded",
         outputPaths: JSON.stringify(outputPaths),
-        seed: outcome.seed ?? input.seed ?? null,
+        seed: formatSeed(outcome.seed ?? input.seed),
         model: outcome.model,
         durationMs: Date.now() - startedAt,
       },
@@ -278,6 +278,17 @@ export function serialiseRender(record: Render, live?: LiveJob) {
     sourceUrl: publicUrlFor(record.sourcePath),
     outputUrls: outputs.map(publicUrlFor),
   };
+}
+
+/**
+ * Providers hand back whatever their JSON carried. fal's seeds routinely exceed
+ * Number.MAX_SAFE_INTEGER, at which point the value JavaScript holds is already
+ * approximate — but it still has to be recorded and displayed, so keep it as
+ * text and let `isReusableSeed` decide whether it can be fed back in.
+ */
+function formatSeed(seed: number | string | undefined | null): string | null {
+  if (seed === undefined || seed === null) return null;
+  return String(seed);
 }
 
 export type SerialisedRender = ReturnType<typeof serialiseRender>;
