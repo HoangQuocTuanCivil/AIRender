@@ -64,6 +64,19 @@ export interface RenderParams {
    */
   maxSide: number;
   outputFormat: "jpeg" | "png";
+  /**
+   * Aborts the job. fal-hosted engines also cancel the request server-side so
+   * the work stops being billed; the others can only stop waiting for it.
+   */
+  signal?: AbortSignal;
+}
+
+/** Thrown when a job is cancelled by the user or hits its deadline. */
+export class RenderCancelledError extends Error {
+  constructor(message = "Đã huỷ.") {
+    super(message);
+    this.name = "RenderCancelledError";
+  }
 }
 
 export interface RenderedImage {

@@ -6,7 +6,6 @@ import {
   Check,
   ExternalLink,
   ImageUp,
-  Loader2,
   RotateCcw,
   Trash2,
 } from "lucide-react";
@@ -22,7 +21,7 @@ import {
   RAIL_COLORS,
   railColorById,
 } from "@/lib/brand";
-import { Badge, Button, Input, Panel } from "@/components/ui";
+import { Badge, Button, Input, Panel, Spinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 /**
@@ -68,7 +67,7 @@ export function SettingsClient() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-ink-500" />
+          <Spinner size={24} />
         </div>
       ) : !data ? (
         <div className="flex flex-1 items-center justify-center p-8 text-center text-[13px] text-ink-500">
@@ -222,7 +221,7 @@ function IconPanel({
             onClick={() => inputRef.current?.click()}
           >
             {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <Spinner size={14} inherit />
             ) : (
               <ImageUp className="h-3.5 w-3.5" />
             )}
@@ -303,7 +302,7 @@ function RailColorPanel({
               }}
             >
               {busy === color.id ? (
-                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                <Spinner size={16} inherit className="text-white" />
               ) : on ? (
                 <Check className="h-4 w-4 text-white" />
               ) : null}
@@ -420,7 +419,7 @@ function CredentialRow({
           disabled={busy || !value.trim()}
           className="flex-none"
         >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+          {busy ? <Spinner size={14} inherit /> : null}
           Lưu
         </Button>
         {credential.source === "settings" ? (

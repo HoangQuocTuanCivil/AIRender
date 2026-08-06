@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ImageOff, Lasso, Loader2, TriangleAlert } from "lucide-react";
+import { Ban, Download, ImageOff, Lasso, TriangleAlert, X } from "lucide-react";
 import type { SerialisedRender } from "@/lib/jobs";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, Spinner } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
 import { RegionEditDialog } from "@/components/region-edit-dialog";
 import type { ProviderInfo } from "@/components/control-panel";
@@ -26,6 +26,27 @@ export function RenderResult({
   const [selected, setSelected] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  // The job writes its own terminal state, so this only asks for the stop — the
+  // poll already running in the studio reports the outcome.
+  const cancel = async () => {
+    if (!render) return;
+    setCancelling(true);
+    try {
+      const response = await fetch(`/api/render/${render.id}/cancel`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? "Không huỷ được.");
+      }
+      toast.success("Đã gửi lệnh huỷ.");
+    } catch (error) {
+      setCancelling(false);
+      toast.error(error instanceof Error ? error.message : "Không huỷ được.");
+    }
+  };
 
   const running = render?.status === "pending" || render?.status === "running";
 
@@ -71,19 +92,28 @@ export function RenderResult({
         ) : null}
 
         <div className="flex items-center gap-2.5 text-sm">
-          <Loader2 className="h-4 w-4 animate-spin text-action" />
+          <Spinner size={18} />
           <span>{render.message ?? "Đang xử lý…"}</span>
-          <span className="font-mono text-xs tabular-nums text-ink-500">
+          <span className="tnum font-mono text-xs text-ink-500">
             {(elapsed / 1000).toFixed(1)}s
           </span>
         </div>
 
-        <p className="max-w-sm text-center text-[11px] leading-relaxed text-ink-500">
-          Nano Banana thường xong sau ~30 giây. FLUX + ControlNet chậm hơn nhiều
-          và có thể mất vài phút khi endpoint nguội. Bạn có thể rời trang — kết
-          quả vẫn được lưu vào Thư viện.
-        </p>
+        <Button size="sm" disabled={cancelling} onClick={cancel}>
+          <X className="h-3.5 w-3.5" />
+          {cancelling ? "Đang huỷ…" : "Huỷ"}
+        </Button>
       </div>
+    );
+  }
+
+  if (render.status === "cancelled") {
+    return (
+      <EmptyState
+        icon={<Ban className="h-7 w-7" />}
+        title="Đã huỷ"
+        body={render.error ?? "Lần render này đã bị dừng."}
+      />
     );
   }
 

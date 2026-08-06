@@ -114,6 +114,40 @@ export function Slider({
   );
 }
 
+/**
+ * Loading ring — see `.vx-spin` in globals.css. Takes the rail colour chosen in
+ * Cài đặt; pass `inherit` when it sits on a filled button, where the surface
+ * already dictates the readable colour.
+ */
+export function Spinner({
+  size = 20,
+  inherit = false,
+  className,
+  label = "Đang tải",
+}: {
+  size?: number;
+  inherit?: boolean;
+  className?: string;
+  label?: string;
+}) {
+  return (
+    <span
+      role="status"
+      aria-label={label}
+      className={cn("vx-spin", inherit && "vx-spin--inherit", className)}
+      style={
+        {
+          width: size,
+          height: size,
+          // Stroke scales with the ring: 3px on a 24px ring is the reference
+          // weight, and a fixed 3px on a 14px ring reads as a filled disc.
+          "--vx-spin-w": `${Math.max(2, Math.round(size / 8))}px`,
+        } as React.CSSProperties
+      }
+    />
+  );
+}
+
 export function Input({
   className,
   ...props

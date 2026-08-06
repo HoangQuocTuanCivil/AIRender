@@ -1,8 +1,9 @@
 import { secret } from "../settings";
 import {
-  fal,
   ensureFalCredentials,
   falErrorMessage,
+  subscribeCancellable,
+  type FalQueueUpdate,
   uploadToFal,
 } from "./fal-shared";
 import {
@@ -118,10 +119,12 @@ export const falProvider: RenderProvider = {
     }
 
     try {
-      const result = await fal.subscribe(model, {
+      const result = await subscribeCancellable<FalOutput>(
+        model,
+        {
         input,
         logs: true,
-        onQueueUpdate(update) {
+        onQueueUpdate(update: FalQueueUpdate) {
           if (update.status === "IN_QUEUE") {
             onProgress?.({
               type: "queued",
@@ -134,7 +137,9 @@ export const falProvider: RenderProvider = {
             onProgress?.({ type: "completed" });
           }
         },
-      });
+        },
+        params.signal,
+      );
 
       const data = result.data as FalOutput;
       const images = data?.images ?? [];

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SerialisedRender } from "@/lib/jobs";
-import { Badge, Button, Field, Panel, Textarea } from "@/components/ui";
+import { Badge, Button, Field, Panel, Spinner, Textarea } from "@/components/ui";
 import { MaskEditor, exportMask } from "@/components/mask-editor";
 import type { ProviderInfo } from "@/components/control-panel";
 import { cn } from "@/lib/utils";
@@ -111,12 +111,18 @@ export function RegionEditDialog({
 
           setProgress(data.message ?? "Đang xử lý…");
 
-          if (data.status === "succeeded" || data.status === "failed") {
+          if (
+            data.status === "succeeded" ||
+            data.status === "failed" ||
+            data.status === "cancelled"
+          ) {
             if (pollRef.current) clearInterval(pollRef.current);
             setBusy(false);
             if (data.status === "succeeded") {
               toast.success("Đã sửa xong vùng đã chọn.");
               onDone(data);
+            } else if (data.status === "cancelled") {
+              toast.info(data.error ?? "Đã huỷ.");
             } else {
               toast.error(data.error ?? "Sửa vùng thất bại.");
             }
@@ -220,7 +226,7 @@ export function RegionEditDialog({
           <div className="mt-auto space-y-2">
             {busy ? (
               <p className="flex items-center gap-2 text-[11px] text-ink-500">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-action" />
+                <Spinner size={14} />
                 {progress}
               </p>
             ) : null}

@@ -11,8 +11,19 @@ import {
   resizeMaskTo,
   snapBox,
 } from "./imaging";
-import { getLiveJob, setLiveJob, clearLiveJob } from "./jobs";
-import { ProviderError, resolveProvider } from "./providers";
+import {
+  JOB_DEADLINE_MS,
+  clearLiveJob,
+  getLiveJob,
+  registerAbort,
+  releaseAbort,
+  setLiveJob,
+} from "./jobs";
+import {
+  ProviderError,
+  RenderCancelledError,
+  resolveProvider,
+} from "./providers";
 import { translateToEnglish } from "./translate";
 import {
   RENDERS_DIR,
@@ -116,7 +127,13 @@ export async function startRegionEdit(input: RegionEditInput): Promise<string> {
     },
   });
 
-  setLiveJob(id, { id, status: "pending", message: "Đang đọc vùng khoanh…", startedAt: Date.now() });
+  registerAbort(id);
+  setLiveJob(id, {
+    id,
+    status: "pending",
+    message: "Đang đọc vùng khoanh…",
+    startedAt: Date.now(),
+  });
 
   void processRegionEdit(id, input, basePath, provider).catch((error) => {
     console.error(`[edit ${id}] uncaught`, error);
@@ -132,6 +149,15 @@ async function processRegionEdit(
   provider: ReturnType<typeof resolveProvider>,
 ) {
   const startedAt = Date.now();
+  const controller = registerAbort(id);
+  const signal = controller.signal;
+  let timedOut = false;
+  const deadline = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, JOB_DEADLINE_MS);
+  deadline.unref?.();
+
   const say = (message: string) => {
     const current = getLiveJob(id);
     if (current) setLiveJob(id, { ...current, status: "running", message });
@@ -207,6 +233,7 @@ async function processRegionEdit(
         imageSize: { width: box.width, height: box.height },
         maxSide: Math.max(box.width, box.height),
         outputFormat: "png",
+        signal,
       },
       (event) => {
         if (event.type === "queued") {
@@ -261,20 +288,24 @@ async function processRegionEdit(
     const current = getLiveJob(id);
     if (current) setLiveJob(id, { ...current, status: "succeeded", message: "Hoàn tất" });
   } catch (error) {
-    const message =
-      error instanceof ProviderError
+    const cancelled = signal.aborted || error instanceof RenderCancelledError;
+    const message = cancelled
+      ? timedOut
+        ? `Quá ${JOB_DEADLINE_MS / 60_000} phút chưa xong nên đã tự dừng.`
+        : "Đã huỷ."
+      : error instanceof ProviderError
         ? error.message
         : error instanceof Error
           ? error.message
           : String(error);
 
-    console.error(`[edit ${id}] failed:`, error);
+    if (!cancelled) console.error(`[edit ${id}] failed:`, error);
 
     await prisma.render
       .update({
         where: { id },
         data: {
-          status: "failed",
+          status: cancelled ? "cancelled" : "failed",
           error: message,
           durationMs: Date.now() - startedAt,
         },
@@ -282,8 +313,16 @@ async function processRegionEdit(
       .catch(() => {});
 
     const current = getLiveJob(id);
-    if (current) setLiveJob(id, { ...current, status: "failed", message });
+    if (current) {
+      setLiveJob(id, {
+        ...current,
+        status: cancelled ? "cancelled" : "failed",
+        message,
+      });
+    }
   } finally {
+    clearTimeout(deadline);
+    releaseAbort(id);
     clearLiveJob(id, 5 * 60_000);
   }
 }

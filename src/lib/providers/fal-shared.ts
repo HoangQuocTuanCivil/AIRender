@@ -1,6 +1,6 @@
 import { fal } from "@fal-ai/client";
 import { secret } from "../settings";
-import { ProviderError } from "./types";
+import { ProviderError, RenderCancelledError } from "./types";
 
 /**
  * Credential handling and uploads shared by every model that runs on fal —
@@ -86,6 +86,63 @@ export function falErrorMessage(error: unknown, model: string): string {
 
   const message = error instanceof Error ? error.message : String(error);
   return `Lỗi từ fal.ai (${model}): ${message}`;
+}
+
+/**
+ * `fal.subscribe` with real cancellation.
+ *
+ * The client exposes a `timeout` option but documents it as not enforced, so
+ * the deadline is imposed here instead. More importantly, aborting locally only
+ * stops us waiting — the request keeps running and keeps being billed. Capturing
+ * the request id from `onEnqueue` lets us call `fal.queue.cancel`, which stops
+ * the work on fal's side too.
+ */
+/**
+ * Shape of the queue callback. Declared here because the options object is
+ * widened to pass through the extra `onEnqueue`, which loses fal's inference.
+ */
+export type FalQueueUpdate = {
+  status: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | string;
+  queue_position?: number;
+  logs?: { message?: string }[];
+};
+
+export async function subscribeCancellable<T>(
+  model: string,
+  options: Record<string, unknown>,
+  signal: AbortSignal | undefined,
+): Promise<{ data: T }> {
+  let requestId: string | null = null;
+
+  const wrapped = {
+    ...options,
+    onEnqueue(id: string) {
+      requestId = id;
+      (options as { onEnqueue?: (id: string) => void }).onEnqueue?.(id);
+    },
+  };
+
+  const run = fal.subscribe(
+    model,
+    wrapped as Parameters<typeof fal.subscribe>[1],
+  ) as Promise<{ data: T }>;
+
+  if (!signal) return run;
+
+  const aborted = new Promise<never>((_, reject) => {
+    const onAbort = () => {
+      // Best effort: fal refuses to cancel a request that already started, in
+      // which case we at least stop waiting for it.
+      if (requestId) {
+        void fal.queue.cancel(model, { requestId }).catch(() => {});
+      }
+      reject(new RenderCancelledError());
+    };
+    if (signal.aborted) onAbort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+  });
+
+  return Promise.race([run, aborted]);
 }
 
 export { fal };

@@ -1,8 +1,9 @@
 import { secret } from "../settings";
 import {
-  fal,
   ensureFalCredentials,
   falErrorMessage,
+  subscribeCancellable,
+  type FalQueueUpdate,
   uploadToFal,
 } from "./fal-shared";
 import {
@@ -97,10 +98,12 @@ export const nanoBananaProvider: RenderProvider = {
     if (typeof params.seed === "number") input.seed = params.seed;
 
     try {
-      const result = await fal.subscribe(MODEL, {
+      const result = await subscribeCancellable<NanoOutput>(
+        MODEL,
+        {
         input,
         logs: true,
-        onQueueUpdate(update) {
+        onQueueUpdate(update: FalQueueUpdate) {
           if (update.status === "IN_QUEUE") {
             onProgress?.({
               type: "queued",
@@ -113,7 +116,9 @@ export const nanoBananaProvider: RenderProvider = {
             onProgress?.({ type: "completed" });
           }
         },
-      });
+        },
+        params.signal,
+      );
 
       const data = result.data as NanoOutput;
       const images = data?.images ?? [];

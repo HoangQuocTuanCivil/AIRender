@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  Ban,
   Download,
   Images,
   Lasso,
-  Loader2,
   RefreshCw,
   Star,
   Trash2,
@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import type { SerialisedRender } from "@/lib/jobs";
 import { getContext, getLighting, getSubject } from "@/lib/presets";
-import { Badge, Button } from "@/components/ui";
+import { Badge, Button, Spinner } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
 import { cn, downloadImage, formatDuration, formatRelativeTime } from "@/lib/utils";
 
@@ -153,7 +153,7 @@ export function HistoryClient() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-ink-500" />
+          <Spinner size={24} />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2.5 p-8 text-center">
@@ -193,9 +193,7 @@ export function HistoryClient() {
           {cursor ? (
             <div className="flex justify-center pb-8">
               <Button onClick={loadMore} disabled={loadingMore}>
-                {loadingMore ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
+                {loadingMore ? <Spinner size={16} inherit /> : null}
                 Tải thêm
               </Button>
             </div>
@@ -228,6 +226,7 @@ function HistoryCard({
 }) {
   const thumb = item.outputUrls[0] ?? item.sourceUrl;
   const failed = item.status === "failed";
+  const cancelled = item.status === "cancelled";
   const subject = getSubject(item.presetId);
   const context = getContext(item.contextId);
   const lighting = getLighting(item.lightingId);
@@ -237,10 +236,17 @@ function HistoryCard({
       <button
         type="button"
         onClick={onOpen}
-        disabled={failed}
+        disabled={failed || cancelled}
         className="relative block aspect-4/3 w-full overflow-hidden bg-surface-2 disabled:cursor-default"
       >
-        {failed ? (
+        {cancelled ? (
+          <span className="flex h-full flex-col items-center justify-center gap-1.5 p-3 text-center">
+            <Ban className="h-5 w-5 text-ink-400" />
+            <span className="line-clamp-3 text-[10px] leading-relaxed text-ink-500">
+              {item.error ?? "Đã huỷ"}
+            </span>
+          </span>
+        ) : failed ? (
           <span className="flex h-full flex-col items-center justify-center gap-1.5 p-3 text-center">
             <TriangleAlert className="h-5 w-5 text-danger" />
             <span className="line-clamp-3 text-[10px] leading-relaxed text-ink-500">

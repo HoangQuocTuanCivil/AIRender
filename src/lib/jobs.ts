@@ -2,7 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { Render } from "@/generated/prisma";
 import { prisma } from "./db";
 import { getSubject } from "./presets";
-import { resolveProvider, ProviderError, type ControlMode } from "./providers";
+import {
+  resolveProvider,
+  ProviderError,
+  RenderCancelledError,
+  type ControlMode,
+} from "./providers";
 import { loadSettings } from "./settings";
 import {
   RENDERS_DIR,
@@ -35,7 +40,12 @@ export interface RenderRequestInput {
   providerId?: string;
 }
 
-export type JobStatus = "pending" | "running" | "succeeded" | "failed";
+export type JobStatus =
+  | "pending"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
 
 export interface LiveJob {
   id: string;
@@ -61,6 +71,48 @@ globalForJobs.airenderJobs = jobs;
 
 export function getLiveJob(id: string): LiveJob | undefined {
   return jobs.get(id);
+}
+
+/**
+ * A job may not finish, ever: fal's control-LoRA endpoints have sat IN_QUEUE for
+ * minutes, and nothing in the client enforces a limit — its own `timeout` option
+ * is documented as not enforced. Without a deadline a stalled request leaves a
+ * row stuck at `running` forever.
+ */
+export const JOB_DEADLINE_MS = 10 * 60_000;
+
+/**
+ * Abort handles for in-flight jobs, kept beside the live registry rather than
+ * inside `LiveJob` because that object is serialised to the client.
+ */
+const globalForAborts = globalThis as unknown as {
+  airenderAborts?: Map<string, AbortController>;
+};
+const aborts: Map<string, AbortController> =
+  globalForAborts.airenderAborts ?? new Map();
+globalForAborts.airenderAborts = aborts;
+
+export function registerAbort(id: string): AbortController {
+  const controller = new AbortController();
+  aborts.set(id, controller);
+  return controller;
+}
+
+export function releaseAbort(id: string): void {
+  aborts.delete(id);
+}
+
+/**
+ * True when there was a running job to stop. fal-hosted engines also cancel the
+ * request upstream, so the work stops being billed; the others can only stop
+ * being waited on.
+ */
+export function cancelJob(id: string): boolean {
+  const controller = aborts.get(id);
+  if (!controller) return false;
+  controller.abort();
+  aborts.delete(id);
+  return true;
 }
 
 /**
@@ -127,6 +179,7 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
     },
   });
 
+  registerAbort(id);
   jobs.set(id, {
     id,
     status: "pending",
@@ -152,6 +205,17 @@ async function processRender(
     const current = jobs.get(id);
     if (current) jobs.set(id, { ...current, ...patch });
   };
+
+  const controller = aborts.get(id) ?? registerAbort(id);
+  const signal = controller.signal;
+  // The deadline aborts through the same controller as the Cancel button, so
+  // there is one path out of a stuck job rather than two.
+  let timedOut = false;
+  const deadline = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, JOB_DEADLINE_MS);
+  deadline.unref?.();
 
   try {
     update({ status: "running", message: "Đang tải ảnh nguồn lên provider…" });
@@ -181,6 +245,7 @@ async function processRender(
         imageSize: { width: input.width, height: input.height },
         maxSide: input.maxSide,
         outputFormat: input.outputFormat,
+        signal,
       },
       (event) => {
         if (event.type === "queued") {
@@ -226,28 +291,37 @@ async function processRender(
 
     update({ status: "succeeded", message: "Hoàn tất" });
   } catch (error) {
-    const message =
-      error instanceof ProviderError
+    // A cancelled job is not a failure — the user asked for it, or the deadline
+    // did. Recording it as `failed` would fill the library with red cards for
+    // something nobody needs to debug.
+    const cancelled = signal.aborted || error instanceof RenderCancelledError;
+    const message = cancelled
+      ? timedOut
+        ? `Quá ${JOB_DEADLINE_MS / 60_000} phút chưa xong nên đã tự dừng. Engine này đang chậm — thử Nano Banana.`
+        : "Đã huỷ."
+      : error instanceof ProviderError
         ? error.message
         : error instanceof Error
           ? error.message
           : String(error);
 
-    console.error(`[render ${id}] failed:`, error);
+    if (!cancelled) console.error(`[render ${id}] failed:`, error);
 
     await prisma.render
       .update({
         where: { id },
         data: {
-          status: "failed",
+          status: cancelled ? "cancelled" : "failed",
           error: message,
           durationMs: Date.now() - startedAt,
         },
       })
       .catch(() => {});
 
-    update({ status: "failed", message });
+    update({ status: cancelled ? "cancelled" : "failed", message });
   } finally {
+    clearTimeout(deadline);
+    releaseAbort(id);
     // Keep the entry around briefly so the final poll sees the terminal state.
     setTimeout(() => jobs.delete(id), 5 * 60_000).unref?.();
   }

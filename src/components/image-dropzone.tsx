@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { ImageUp, Loader2, X } from "lucide-react";
+import { ImageUp, X } from "lucide-react";
+import { Spinner } from "@/components/ui";
 import { cn, readImageSize } from "@/lib/utils";
 
 export interface SourceImage {
@@ -130,7 +131,7 @@ export function ImageDropzone({
       >
         {uploading ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin text-action" />
+            <Spinner size={22} />
             <p className="text-xs text-ink-500">Đang tải lên…</p>
           </>
         ) : (

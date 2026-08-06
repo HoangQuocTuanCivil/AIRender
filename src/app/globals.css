@@ -235,6 +235,48 @@ body {
   scrollbar-width: none;
 }
 
+/* Loading ring. A conic sweep masked down to a stroke: the tail fades out and
+   the head cuts off sharp, which is what reads as motion once it spins — a
+   uniform ring looks static at any speed.
+   Colour follows the rail colour picked in Cài đặt (--bar, the same darkened
+   value the rail and the palette swatches paint). Add .vx-spin--inherit where
+   the ring sits on a filled button and must take that surface's text colour. */
+.vx-spin {
+  --vx-spin-w: 3px;
+  --vx-spin-c: var(--bar, var(--rail, #111a46));
+  display: inline-block;
+  flex: none;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--vx-spin-c));
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - var(--vx-spin-w)),
+    #000 0
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - var(--vx-spin-w)),
+    #000 0
+  );
+  animation: vx-spin 0.8s linear infinite;
+}
+
+.vx-spin--inherit {
+  --vx-spin-c: currentColor;
+}
+
+@keyframes vx-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vx-spin {
+    animation-duration: 2.4s;
+  }
+}
+
 /* Header row. Same --bar as the rail: the two are one L-shaped frame around the
    page, and a white header would cut that frame in half at the corner. */
 .vx-head {

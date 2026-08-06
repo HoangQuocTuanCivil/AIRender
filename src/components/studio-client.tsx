@@ -70,11 +70,19 @@ export function StudioClient() {
           const data: SerialisedRender = await response.json();
           setRender(data);
 
-          if (data.status === "succeeded" || data.status === "failed") {
+          // "cancelled" is terminal too — without it the poll runs for ever
+          // after the user stops a job.
+          if (
+            data.status === "succeeded" ||
+            data.status === "failed" ||
+            data.status === "cancelled"
+          ) {
             stopPolling();
             setSubmitting(false);
             if (data.status === "succeeded") {
               toast.success("Render xong!");
+            } else if (data.status === "cancelled") {
+              toast.info(data.error ?? "Đã huỷ.");
             } else {
               toast.error(data.error ?? "Render thất bại.");
             }
