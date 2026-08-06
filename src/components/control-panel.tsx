@@ -15,8 +15,6 @@ import {
   SUBJECT_PRESETS,
   composePrompt,
   defaultNegativePrompt,
-  getContext,
-  getLighting,
   getSubject,
   type SubjectGroup,
 } from "@/lib/presets";
@@ -120,8 +118,6 @@ export function ControlPanel({
   };
 
   const subject = getSubject(settings.subjectId);
-  const context = getContext(settings.contextId);
-  const lighting = getLighting(settings.lightingId);
   const isCustom = settings.presetId === CUSTOM_PRESET_ID;
   const groupSubjects = SUBJECT_PRESETS.filter((p) => p.group === activeGroup);
 
@@ -148,25 +144,26 @@ export function ControlPanel({
           ))}
         </div>
 
-        <div className="space-y-1.5">
+        {/* Descriptions live in the tooltip, not inline — with 23 subjects plus
+            two more axes below, inline blurbs pushed the Render button several
+            screens down. */}
+        <div className="space-y-1">
           {groupSubjects.map((preset) => (
             <button
               key={preset.id}
               type="button"
               disabled={disabled}
               onClick={() => recompose({ subjectId: preset.id })}
+              title={preset.description}
               className={cn(
-                "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                "w-full rounded-md border px-3 py-2 text-left text-[12px] font-medium transition-colors",
                 "disabled:pointer-events-none disabled:opacity-50",
                 settings.subjectId === preset.id
                   ? "border-action bg-module-soft"
                   : "border-border bg-surface-2 hover:bg-hover",
               )}
             >
-              <p className="text-[12px] font-medium">{preset.name}</p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-ink-500">
-                {preset.description}
-              </p>
+              {preset.name}
             </button>
           ))}
         </div>
@@ -201,12 +198,6 @@ export function ControlPanel({
             </button>
           ))}
         </div>
-        {context?.description ? (
-          <p className="flex gap-1.5 rounded-md bg-surface-2 p-2 text-[10px] leading-relaxed text-ink-500">
-            <Info className="mt-px h-3 w-3 shrink-0" />
-            {context.description}
-          </p>
-        ) : null}
       </Panel>
 
       <Panel title="Ánh sáng">
@@ -230,12 +221,6 @@ export function ControlPanel({
             </button>
           ))}
         </div>
-        {lighting?.description ? (
-          <p className="flex gap-1.5 rounded-md bg-surface-2 p-2 text-[10px] leading-relaxed text-ink-500">
-            <Info className="mt-px h-3 w-3 shrink-0" />
-            {lighting.description}
-          </p>
-        ) : null}
       </Panel>
 
       <Panel
@@ -363,9 +348,6 @@ export function ControlPanel({
             </button>
           ))}
         </div>
-        <p className="text-[10px] leading-relaxed text-ink-500">
-          {RESOLUTION_TIERS.find((t) => t.id === settings.resolutionId)?.description}
-        </p>
       </Panel>
 
       <Panel
