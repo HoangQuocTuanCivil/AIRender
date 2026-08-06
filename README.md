@@ -147,7 +147,17 @@ Cắt vùng ra trước khi gửi là điểm mấu chốt về chất lượng:
 |---|---|
 | **Nano Banana hiểu tiếng Việt trực tiếp** | Đã kiểm chứng. Cứ viết tiếng Việt, không cần dịch. |
 | Engine FLUX | Không hiểu tiếng Việt — câu lệnh được **dịch tự động** (cần `GEMINI_API_KEY`). |
-| **FLUX Fill** | Engine duy nhất nhận vùng khoanh trực tiếp nên mép hoà mượt nhất. Chỉ xuất hiện trong hộp thoại sửa vùng. |
+| **FLUX Fill** | Engine duy nhất nhận vùng khoanh trực tiếp. Chỉ xuất hiện trong hộp thoại sửa vùng. |
+
+**Hai engine hành xử khác nhau trong vùng khoanh** — đã đo thực tế:
+
+| | Nano Banana | FLUX Fill |
+|---|---|---|
+| Cách nhìn | Thấy ảnh cắt kèm bối cảnh xung quanh | Chỉ biết vùng mask |
+| Kết quả | Bố cục tự nhiên trong vùng, khoanh thô vẫn đẹp | **Lấp đúng hình dạng mask** — khoanh elip thì ra elip |
+| Nên dùng khi | Sửa thứ hữu cơ: cây, mây, xe, người | Ranh giới chính là thứ cần đúng: thay mảng tường, đổi mặt đường |
+
+Với FLUX Fill, **vẽ mask bám sát mép thật của vật cần sửa**, đừng khoanh bừa một mảng.
 
 Sửa được **nhiều vòng**: kết quả sửa lại trở thành ảnh gốc cho lần sửa tiếp theo. Thư viện đánh dấu các bản sửa bằng biểu tượng và có liên kết về ảnh gốc.
 

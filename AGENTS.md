@@ -82,6 +82,10 @@ The region is **cropped with padding and sent alone**, not sent as a full frame 
 
 `supportsMask` is false for every engine except FLUX Fill, which is `editOnly` and therefore hidden from the studio's engine picker — it cannot render a full frame.
 
+**Mask polarity is measured, not assumed: white is repainted.** fal documents neither endpoint's convention, so it was tested — a white ellipse over the sky changed 92.5% of pixels inside it and 25% outside. That 25% is the important half of the result: a model given an explicit mask still rewrote a quarter of the area it was told to preserve, which is why the composite is not optional.
+
+**The two engines behave differently inside the region.** FLUX Fill fills the mask *shape* — an elliptical mask produces an ellipse of content, so the mask has to follow the real edges of what is being changed. Nano Banana sees a cropped photograph with context and composes within it, so a rough mask still gives a natural result. Prefer Nano Banana for anything organic; FLUX Fill when the boundary itself is the point.
+
 ## Prompt library
 
 `presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 9 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.

@@ -122,11 +122,15 @@ export async function cropTo(buffer: Buffer, box: Box): Promise<Buffer> {
 /**
  * Normalise a painted mask to what inpainting endpoints expect.
  *
- * `white` is the region to repaint. This is the convention across the
- * Stable Diffusion and FLUX inpainting families, but fal's own docs for
- * flux-pro/v1/fill and flux-lora/inpainting do not state it, so the polarity is
- * inverted by one flag rather than buried in the call site — flip
- * MASK_WHITE_MEANS_REPAINT if a live test ever shows otherwise.
+ * `white` is the region to repaint. fal's docs for flux-pro/v1/fill and
+ * flux-lora/inpainting do not state the polarity, so it was measured: an edit
+ * through fal-ai/flux-pro/v1/fill with a white ellipse over the sky changed
+ * 92.5% of the pixels inside the ellipse and 25% outside it — white is what gets
+ * repainted. Kept behind a flag so an endpoint that ever disagrees is a one-line
+ * fix rather than a hunt through the call sites.
+ *
+ * The 25% is worth remembering: even a mask-native model rewrites a quarter of
+ * the area it was told to leave alone. That is why `compositeThroughMask` exists.
  */
 export const MASK_WHITE_MEANS_REPAINT = true;
 
