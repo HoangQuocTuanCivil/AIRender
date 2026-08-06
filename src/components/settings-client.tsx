@@ -67,7 +67,7 @@ export function SettingsClient() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Spinner size={24} />
+          <Spinner size={48} />
         </div>
       ) : !data ? (
         <div className="flex flex-1 items-center justify-center p-8 text-center text-[13px] text-ink-500">

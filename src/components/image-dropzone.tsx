@@ -131,7 +131,7 @@ export function ImageDropzone({
       >
         {uploading ? (
           <>
-            <Spinner size={22} />
+            <Spinner size={44} />
             <p className="text-xs text-ink-500">Đang tải lên…</p>
           </>
         ) : (

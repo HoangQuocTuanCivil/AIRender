@@ -92,7 +92,7 @@ export function RenderResult({
         ) : null}
 
         <div className="flex items-center gap-2.5 text-sm">
-          <Spinner size={18} />
+          <Spinner size={36} />
           <span>{render.message ?? "Đang xử lý…"}</span>
           <span className="tnum font-mono text-xs text-ink-500">
             {(elapsed / 1000).toFixed(1)}s

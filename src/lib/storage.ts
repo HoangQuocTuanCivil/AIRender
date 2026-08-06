@@ -83,6 +83,21 @@ export async function saveBuffer(
   return relativePath;
 }
 
+/** Download a provider result so it can be re-encoded before being stored. */
+export async function fetchImage(
+  url: string,
+  fallbackMime: string,
+): Promise<Buffer> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Không tải được ảnh kết quả (${response.status} ${response.statusText})`,
+    );
+  }
+  void fallbackMime;
+  return Buffer.from(await response.arrayBuffer());
+}
+
 /** Download a provider result URL into local storage. */
 export async function saveRemoteImage(
   dir: string,

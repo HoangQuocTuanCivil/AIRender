@@ -247,7 +247,16 @@ body {
   display: inline-block;
   flex: none;
   border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent, var(--vx-spin-c));
+  /* loading.io's "Eclipse": an arc that fades in from nothing and ends on a
+     crisp terminus, rather than a ring of even weight. The 40deg of dead space
+     is what reads as a gap and makes the rotation legible. */
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 40deg,
+    var(--vx-spin-c) 355deg,
+    var(--vx-spin-c) 360deg
+  );
   -webkit-mask: radial-gradient(
     farthest-side,
     transparent calc(100% - var(--vx-spin-w)),

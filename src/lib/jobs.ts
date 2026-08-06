@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Render } from "@/generated/prisma";
 import { prisma } from "./db";
+import { APP_NAME } from "./brand";
+import { brandImage } from "./imaging";
 import { getSubject } from "./presets";
 import {
   resolveProvider,
@@ -12,9 +14,10 @@ import { loadSettings } from "./settings";
 import {
   RENDERS_DIR,
   contentTypeForPath,
+  fetchImage,
   publicUrlFor,
   readStoredFile,
-  saveRemoteImage,
+  saveBuffer,
 } from "./storage";
 
 export interface RenderRequestInput {
@@ -24,6 +27,10 @@ export interface RenderRequestInput {
   prompt: string;
   extraDetails?: string;
   lanesPerDirection?: number | null;
+  lensId?: string;
+  trafficId?: string;
+  seasonId?: string;
+  gradingId?: string;
   negativePrompt?: string;
   presetId?: string;
   contextId?: string;
@@ -163,6 +170,10 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
       prompt: input.prompt,
       extraDetails: input.extraDetails || null,
       lanesPerDirection: input.lanesPerDirection ?? null,
+      lensId: input.lensId ?? null,
+      trafficId: input.trafficId ?? null,
+      seasonId: input.seasonId ?? null,
+      gradingId: input.gradingId ?? null,
       negativePrompt: input.negativePrompt || null,
       controlStrength: input.controlStrength,
       strength: input.strength,
@@ -268,11 +279,18 @@ async function processRender(
 
     const outputPaths: string[] = [];
     for (const [index, image] of outcome.images.entries()) {
+      const downloaded = await fetchImage(image.url, image.contentType);
+      // Re-encoded so the file carries this application's metadata instead of
+      // whatever the provider attached. See brandImage for what this does not do.
+      const branded = await brandImage(downloaded, input.outputFormat, {
+        software: APP_NAME,
+        description: input.prompt.slice(0, 300),
+      });
       outputPaths.push(
-        await saveRemoteImage(
+        await saveBuffer(
           RENDERS_DIR,
-          image.url,
-          image.contentType,
+          branded,
+          `image/${input.outputFormat}`,
           `${id}-${index}`,
         ),
       );
@@ -358,6 +376,10 @@ export function serialiseRender(record: Render, live?: LiveJob) {
     prompt: record.prompt,
     extraDetails: record.extraDetails,
     lanesPerDirection: record.lanesPerDirection,
+    lensId: record.lensId,
+    trafficId: record.trafficId,
+    seasonId: record.seasonId,
+    gradingId: record.gradingId,
     negativePrompt: record.negativePrompt,
     controlStrength: record.controlStrength,
     strength: record.strength,

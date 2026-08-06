@@ -45,6 +45,12 @@ export interface SubjectPreset {
    */
   accuracy: string;
   defaults: PresetDefaults;
+  /**
+   * Lens `auto` resolves to for this subject — the one a civil-infrastructure
+   * photographer would mount. Users should not have to know optics to get a
+   * professional frame.
+   */
+  defaultLens: string;
 }
 
 export interface ContextModifier {
@@ -66,17 +72,20 @@ export interface LightingModifier {
 // ---------------------------------------------------------------------------
 
 /** Infrastructure is shot on longer lenses and from drones, not tilt-shift. */
+/**
+ * Camera tails describe the *quality* of the photograph, never the lens — that
+ * belongs to the lens axis. Leaving "24mm tilt-shift" hardcoded here meant a
+ * user who picked a telephoto got two contradicting lens statements in one
+ * prompt, and the model split the difference.
+ */
 const INFRA_TAIL =
   "professional infrastructure and civil engineering photography, " +
-  "natural perspective with straight undistorted horizon, physically accurate lighting, " +
-  "realistic weathering and material aging, sharp focus from foreground to horizon, " +
-  "high dynamic range, ultra detailed, 8k";
+  "physically accurate lighting, realistic weathering and material aging, " +
+  "sharp focus from foreground to horizon, high dynamic range, ultra detailed, 8k";
 
-/** Buildings keep the tilt-shift architectural photography look. */
 const ARCH_TAIL =
-  "professional architectural photography, shot on full-frame camera, 24mm tilt-shift lens, " +
-  "vertical lines perfectly corrected, high dynamic range, physically accurate lighting, " +
-  "sharp focus throughout, ultra detailed materials, 8k";
+  "professional architectural photography, high dynamic range, " +
+  "physically accurate lighting, sharp focus throughout, ultra detailed materials, 8k";
 
 /**
  * Applied to every subject. Garbled lettering on signs and portals is the
@@ -116,6 +125,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "spacing, W-beam guardrail with regular equally spaced posts, uniform pavement colour without " +
       "patchwork, smooth continuous vertical and horizontal alignment curvature, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.88,
@@ -140,6 +150,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "and regular joint pattern, continuous drainage channel with constant cross-section, guardrail " +
       "posts evenly spaced following the curve, lane markings continuous around the curve, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -163,6 +174,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "structural piers of the flyovers aligned in regular rows, uniform deck thickness on each " +
       "structure, continuous edge lines on all ramps, clean merge and diverge tapers, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "drone",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -186,6 +198,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "planting intervals, kerb line continuous and parallel to the carriageway, consistent sidewalk " +
       "width, crosswalk stripes evenly spaced and perpendicular to the kerb, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.85,
@@ -207,6 +220,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "toll lanes of identical width in a symmetric arrangement, canopy structural bays evenly " +
       "spaced with consistent depth, booths identical in size and detailing, channelising island " +
       "noses symmetric, " + NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -237,6 +251,7 @@ const RAIL_SUBJECTS: SubjectPreset[] = [
       "viaduct, catenary masts at strictly regular intervals and identical height, contact wire " +
       "straight and exactly parallel to the track, two rails at constant gauge perfectly parallel, " +
       "sound barrier panels of uniform size in a continuous run, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.92,
@@ -258,6 +273,7 @@ const RAIL_SUBJECTS: SubjectPreset[] = [
       "piers evenly spaced in a straight row down the median, identical pier geometry throughout, " +
       "constant guideway depth and width, catenary masts at regular intervals, track gauge constant, " +
       "parapet panels of uniform height in a continuous line, " + NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -280,6 +296,7 @@ const RAIL_SUBJECTS: SubjectPreset[] = [
       "rails perfectly parallel at constant gauge, catenary masts strictly regularly spaced and " +
       "identical, contact wire straight and parallel to the rails, cable trough continuous along the " +
       "track, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -302,6 +319,7 @@ const RAIL_SUBJECTS: SubjectPreset[] = [
       "and parallel to the track, tactile warning strip continuous at constant offset from the edge, " +
       "platform lighting at regular intervals, train car windows and doors evenly spaced, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "wide-ts",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -334,6 +352,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "crossing or sagging cables, constant deck depth across the main span, deck edge lines straight " +
       "and continuous, pylon perfectly vertical and symmetric, approach piers evenly spaced, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.95,
@@ -356,6 +375,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "vertical and evenly spaced along the whole span, hanger lengths varying smoothly with the " +
       "cable curve, both towers identical in height and detailing, deck of constant depth and " +
       "perfectly straight in elevation, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.95,
@@ -379,6 +399,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "girder soffit forming a smooth continuous curve without steps, piers identical in shape and " +
       "evenly spaced, deck edge perfectly straight in elevation, clean formwork joint lines at " +
       "regular segment intervals, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.93,
@@ -400,6 +421,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "arch forming one smooth symmetric curve, hangers or spandrel columns perfectly vertical and " +
       "evenly spaced, arch rib of consistent cross-section, both halves of the arch exactly " +
       "symmetric about midspan, deck straight and of constant depth, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.94,
@@ -422,6 +444,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "all spans exactly equal in length, piers identical and evenly spaced in a perfectly straight " +
       "row, constant girder depth on every span, pier caps identical in size, parapet continuous with " +
       "uniform height, deck soffit forming a straight unbroken line, " + NO_TEXT_CLAUSE,
+    defaultLens: "tele",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.92,
@@ -444,6 +467,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "piers evenly spaced along the curve, constant deck depth throughout, parapet continuous at " +
       "uniform height, deck edge forming a smooth curve without kinks, consistent lane count on the " +
       "flyover, " + NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -468,6 +492,7 @@ const BRIDGE_SUBJECTS: SubjectPreset[] = [
       "hanger count exactly as drawn with even spacing, structure perfectly symmetric where the " +
       "drawing is symmetric, deck line straight and horizontal, no drawn line left unbuilt and no " +
       "structural element invented, " + NO_TEXT_CLAUSE,
+    defaultLens: "long-tele",
     defaults: {
       controlMode: "canny",
       controlStrength: 0.97,
@@ -497,6 +522,7 @@ const TUNNEL_SUBJECTS: SubjectPreset[] = [
       "portal opening perfectly symmetric about its centreline, wing walls symmetric on both sides, " +
       "headwall panel joints in a regular grid, approach road lane markings continuous into the " +
       "portal, slope protection mesh or shotcrete of uniform texture, " + NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.92,
@@ -521,6 +547,7 @@ const TUNNEL_SUBJECTS: SubjectPreset[] = [
       "perfectly straight line converging on the vanishing point, jet fans at regular intervals and " +
       "identical, lining panel joints in a regular repeating pattern, lane markings continuous and " +
       "straight, walkway kerb continuous at constant height, " + NO_TEXT_CLAUSE,
+    defaultLens: "wide-ts",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.94,
@@ -542,6 +569,7 @@ const TUNNEL_SUBJECTS: SubjectPreset[] = [
       "retaining walls descending at a constant smooth gradient, wall panel joints evenly spaced, " +
       "handrail continuous at constant height above the wall, lane markings continuous down the ramp, " +
       "box section opening symmetric about the road centreline, " + NO_TEXT_CLAUSE,
+    defaultLens: "wide-ts",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.92,
@@ -569,6 +597,7 @@ const ARCH_SUBJECTS: SubjectPreset[] = [
     accuracy:
       "consistent floor heights, window openings aligned in a regular grid, facade panel joints " +
       "uniform, roof line straight, " + NO_TEXT_CLAUSE,
+    defaultLens: "wide-ts",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.85,
@@ -589,6 +618,7 @@ const ARCH_SUBJECTS: SubjectPreset[] = [
     accuracy:
       "ceiling grid regular and aligned, lighting fixtures evenly spaced, floor joint pattern " +
       "consistent, wall and ceiling planes meeting cleanly, " + NO_TEXT_CLAUSE,
+    defaultLens: "wide-ts",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.9,
@@ -609,6 +639,7 @@ const ARCH_SUBJECTS: SubjectPreset[] = [
     accuracy:
       "building footprints matching the plan, road alignments smooth and continuous, planting in " +
       "coherent arrangements, " + NO_TEXT_CLAUSE,
+    defaultLens: "drone",
     defaults: {
       controlMode: "depth",
       controlStrength: 0.85,
@@ -629,6 +660,7 @@ const ARCH_SUBJECTS: SubjectPreset[] = [
     accuracy:
       "scaffolding standards evenly spaced, formwork panels of uniform size, site fencing continuous, " +
       NO_TEXT_CLAUSE,
+    defaultLens: "standard",
     defaults: {
       controlMode: "canny",
       controlStrength: 0.82,
@@ -841,6 +873,236 @@ export function getLighting(id: string | null | undefined) {
   return LIGHTING_MODIFIERS.find((l) => l.id === id);
 }
 
+// ---------------------------------------------------------------------------
+// Image quality — ống kính, giao thông, mùa, hậu kỳ
+// ---------------------------------------------------------------------------
+
+export interface QualityOption {
+  id: string;
+  name: string;
+  description: string;
+  /** Empty for the "leave it to the preset" entry. */
+  prompt: string;
+}
+
+/**
+ * Lens is the single biggest lever on whether an infrastructure render reads as
+ * a photograph. Telephoto compression is what makes a viaduct's spans line up
+ * into a regular rhythm — the shot every bridge brochure uses — while a wide
+ * angle exaggerates the near span and makes the same model look cheap.
+ *
+ * `auto` emits nothing here; `lensClause` then supplies the sensible default for
+ * the subject's group.
+ */
+export const LENS_OPTIONS: QualityOption[] = [
+  {
+    id: "auto",
+    name: "Tự động",
+    description:
+      "Dùng ống kính mà dân chụp công trình thường chọn cho loại công trình đó. Không cần biết gì về ống kính.",
+    prompt: "",
+  },
+  {
+    id: "tele",
+    name: "Tele nén 135mm",
+    description:
+      "Nén phối cảnh mạnh — các nhịp cầu trông đều tăm tắp, núi nền kéo lại gần. Ảnh trang bìa hồ sơ.",
+    prompt:
+      "shot on a 135mm telephoto lens, strong perspective compression stacking the " +
+      "repeating spans into an even rhythm, distant hills pulled close and layered",
+  },
+  {
+    id: "long-tele",
+    name: "Tele dài 200mm",
+    description: "Nén tối đa, tách hẳn công trình khỏi nền. Dùng cho ảnh chi tiết kết cấu.",
+    prompt:
+      "shot on a 200mm telephoto lens, extreme perspective compression, the structure " +
+      "isolated flat against a compressed background, shallow depth of field falling off behind",
+  },
+  {
+    id: "standard",
+    name: "Tiêu chuẩn 50mm",
+    description: "Trung tính, gần mắt người nhất. An toàn khi không chắc.",
+    prompt:
+      "shot on a 50mm lens, natural undistorted perspective close to human vision",
+  },
+  {
+    id: "wide-ts",
+    name: "Góc rộng tilt-shift 24mm",
+    description: "Đường thẳng đứng không đổ. Cho công trình cao và không gian chật.",
+    prompt:
+      "shot on a 24mm tilt-shift lens, vertical lines perfectly corrected and parallel, " +
+      "wide framing keeping the whole structure in view without converging verticals",
+  },
+  {
+    id: "drone",
+    name: "Flycam góc rộng",
+    description: "Nhìn bao quát từ trên cao, hợp phối cảnh tổng thể và nút giao.",
+    prompt:
+      "aerial drone photography, wide overview framing, slight downward tilt, " +
+      "clean horizon high in the frame",
+  },
+];
+
+/**
+ * Traffic. Subject prompts already mention it loosely ("light free-flowing
+ * traffic"); this clause is placed after them and states a number, which is
+ * specific enough to win.
+ */
+export const TRAFFIC_OPTIONS: QualityOption[] = [
+  {
+    id: "auto",
+    name: "Theo loại công trình",
+    description: "Dùng mô tả sẵn trong preset.",
+    prompt: "",
+  },
+  {
+    id: "empty",
+    name: "Không có xe",
+    description: "Mặt đường trống hoàn toàn — làm nổi hình học và vạch kẻ.",
+    prompt:
+      "no vehicles anywhere, completely empty carriageway, the road surface and " +
+      "markings fully visible and unobstructed",
+  },
+  {
+    id: "light",
+    name: "Vắng xe",
+    description: "Vài xe cách xa nhau. Ảnh sạch mà vẫn có sự sống.",
+    prompt: "light traffic, only a few vehicles, widely spaced along the carriageway",
+  },
+  {
+    id: "normal",
+    name: "Bình thường",
+    description: "Dòng xe chảy đều, không ùn.",
+    prompt: "moderate free-flowing traffic evenly distributed across the lanes",
+  },
+  {
+    id: "peak",
+    name: "Giờ cao điểm",
+    description: "Xe dày nhưng có trật tự — chứng minh năng lực thông hành.",
+    prompt:
+      "heavy peak-hour traffic, dense orderly queues of vehicles filling every lane, " +
+      "no gaps between vehicles",
+  },
+];
+
+/** Season, written for Vietnamese vegetation rather than temperate defaults. */
+export const SEASON_OPTIONS: QualityOption[] = [
+  {
+    id: "auto",
+    name: "Không chỉ định",
+    description: "Để AI tự chọn theo bối cảnh và ánh sáng.",
+    prompt: "",
+  },
+  {
+    id: "dry",
+    name: "Mùa khô",
+    description: "Cây hơi úa, lề đường bụi, trời mù nhẹ.",
+    prompt:
+      "dry season in Vietnam, vegetation slightly parched and dulled, dust along the " +
+      "road shoulders, hazy sky with reduced far visibility",
+  },
+  {
+    id: "wet",
+    name: "Mùa mưa",
+    description: "Cây xanh đậm, đất ẩm, mây tích cao.",
+    prompt:
+      "rainy season in Vietnam, vegetation deep saturated green and dense, damp ground, " +
+      "tall build-up cumulus clouds",
+  },
+  {
+    id: "flamboyant",
+    name: "Mùa phượng nở",
+    description: "Đầu hè — phượng vĩ đỏ cam rực dọc tuyến.",
+    prompt:
+      "early summer in Vietnam, flame trees in full orange-red bloom along the roadside, " +
+      "fresh bright foliage",
+  },
+];
+
+/** Post-processing character. Kept short — this competes with the camera tail. */
+export const GRADING_OPTIONS: QualityOption[] = [
+  {
+    id: "auto",
+    name: "Không chỉ định",
+    description: "Dùng phong cách mặc định của preset.",
+    prompt: "",
+  },
+  {
+    id: "documentary",
+    name: "Tài liệu trung tính",
+    description: "Màu tự nhiên, không chỉnh mạnh. Hợp hồ sơ kỹ thuật.",
+    prompt:
+      "neutral documentary photography, natural unmanipulated colour, no heavy grading",
+  },
+  {
+    id: "commercial",
+    name: "Quảng cáo bóng bẩy",
+    description: "Tương phản cao, highlight ấm. Hợp trang bìa và thuyết trình.",
+    prompt:
+      "polished commercial architectural photography, rich contrast, warm graded " +
+      "highlights, deep clean shadows",
+  },
+  {
+    id: "technical",
+    name: "Kỹ thuật phẳng",
+    description: "Phơi sáng đều, màu chính xác, không kịch tính. Hợp bản vẽ hoàn công.",
+    prompt:
+      "flat neutral technical record photograph, even exposure across the frame, " +
+      "accurate colour, minimal contrast and no dramatic grading",
+  },
+];
+
+export function getQualityOption(
+  list: QualityOption[],
+  id: string | null | undefined,
+): QualityOption {
+  return list.find((o) => o.id === id) ?? list[0];
+}
+
+export interface QualitySettings {
+  lensId: string;
+  trafficId: string;
+  seasonId: string;
+  gradingId: string;
+}
+
+export const DEFAULT_QUALITY: QualitySettings = {
+  lensId: "auto",
+  trafficId: "auto",
+  seasonId: "auto",
+  gradingId: "auto",
+};
+
+/**
+ * Which lens `auto` picks for a subject.
+ *
+ * Choosing a lens is a professional judgement most users should not have to
+ * make, and the wrong one is what separates a brochure photograph from an
+ * obvious render — so every subject carries the lens a civil-infrastructure
+ * photographer would actually mount. The picker still shows the resolved choice,
+ * so it teaches rather than hides.
+ */
+export function resolvedLens(subjectId: string, lensId: string): QualityOption {
+  const chosen = getQualityOption(LENS_OPTIONS, lensId);
+  if (chosen.id !== "auto") return chosen;
+  const subject = getSubject(subjectId);
+  return getQualityOption(LENS_OPTIONS, subject?.defaultLens ?? "standard");
+}
+
+function qualityClauses(
+  quality: QualitySettings | undefined,
+  subject: SubjectPreset,
+): { lens: string; traffic?: string; season?: string; grading?: string } {
+  const q = quality ?? DEFAULT_QUALITY;
+  return {
+    lens: resolvedLens(subject.id, q.lensId).prompt,
+    traffic: getQualityOption(TRAFFIC_OPTIONS, q.trafficId).prompt || undefined,
+    season: getQualityOption(SEASON_OPTIONS, q.seasonId).prompt || undefined,
+    grading: getQualityOption(GRADING_OPTIONS, q.gradingId).prompt || undefined,
+  };
+}
+
 export type PromptStyle = "describe" | "instruct";
 
 /** Groups whose subjects carry a road carriageway, so a lane count applies. */
@@ -881,20 +1143,28 @@ function composeDescribePrompt(
   lightingId: string,
   extra?: string,
   lanes?: number | null,
+  quality?: QualitySettings,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
+  const q = qualityClauses(quality, subject);
 
   return [
     subject.prompt,
+    // Right after the subject so it overrides the looser traffic wording the
+    // subject prompts already carry.
+    q.traffic,
     // Right after the subject, ahead of the other accuracy constraints: FLUX
     // weights earlier tokens more heavily and this is the one a reviewer counts.
     lanes ? lanesClause(lanes) : undefined,
     subject.accuracy,
     getContext(contextId)?.prompt,
     getLighting(lightingId)?.prompt,
+    q.season,
     // Project specifics sit just before the camera tail: late enough not to
     // dilute the geometry constraints, early enough to still carry weight.
     extra,
+    q.lens,
+    q.grading,
     tail,
   ]
     .map((part) => part?.trim())
@@ -914,8 +1184,10 @@ function composeInstructPrompt(
   lightingId: string,
   extra?: string,
   lanes?: number | null,
+  quality?: QualitySettings,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
+  const q = qualityClauses(quality, subject);
   const context = getContext(contextId)?.prompt;
   const lighting = getLighting(lightingId)?.prompt;
 
@@ -933,9 +1205,13 @@ function composeInstructPrompt(
 
   lines.push(`Preserve precisely: ${subject.accuracy}.`);
 
+  if (q.traffic) lines.push(`Traffic: ${q.traffic}.`);
   if (context) lines.push(`Environment: ${context}.`);
   if (lighting) lines.push(`Lighting: ${lighting}.`);
+  if (q.season) lines.push(`Season: ${q.season}.`);
   if (extra?.trim()) lines.push(`Project specifics: ${extra.trim()}.`);
+  lines.push(`Camera: ${q.lens}.`);
+  if (q.grading) lines.push(`Grading: ${q.grading}.`);
   lines.push(`Look: ${tail}.`);
 
   return lines.join("\n");
@@ -954,6 +1230,8 @@ export function composePrompt(
   extra?: string,
   /** Lanes per direction; null/0 leaves the count unconstrained. */
   lanes?: number | null,
+  /** Lens, traffic, season and grading. Omitted means every axis on auto. */
+  quality?: QualitySettings,
 ): string {
   const subject = getSubject(subjectId);
   if (!subject) return "";
@@ -963,8 +1241,8 @@ export function composePrompt(
   const effectiveLanes = subjectHasLanes(subjectId) ? lanes : null;
 
   return style === "instruct"
-    ? composeInstructPrompt(subject, contextId, lightingId, extra, effectiveLanes)
-    : composeDescribePrompt(subject, contextId, lightingId, extra, effectiveLanes);
+    ? composeInstructPrompt(subject, contextId, lightingId, extra, effectiveLanes, quality)
+    : composeDescribePrompt(subject, contextId, lightingId, extra, effectiveLanes, quality);
 }
 
 export function defaultNegativePrompt(): string {

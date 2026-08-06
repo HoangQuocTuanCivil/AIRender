@@ -45,6 +45,11 @@ model Render {
   extraDetails String?
   /// Lanes per direction the user pinned, null when left to the model.
   lanesPerDirection Int?
+  /// Image-quality axes; null means the axis was left on auto.
+  lensId    String?
+  trafficId String?
+  seasonId  String?
+  gradingId String?
   negativePrompt    String?
   controlStrength Float
   strength        Float

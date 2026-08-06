@@ -14,6 +14,7 @@ import {
   composePrompt,
   getResolution,
   getSubject,
+  resolvedLens,
   subjectHasLanes,
 } from "../src/lib/presets";
 
@@ -129,6 +130,39 @@ for (const id of ["road-expressway", "bridge-viaduct", "tunnel-interior"]) {
 // Omitting the count must leave no trace of the clause.
 if (/lanes in total/.test(composePrompt("road-expressway", "none", "daylight")))
   fail("lane clause appears even when no count was given");
+
+// Every subject must name the lens a professional would mount, so a user who
+// never opens the quality panel still gets a considered frame.
+for (const s2 of SUBJECT_PRESETS) {
+  const lens = resolvedLens(s2.id, "auto");
+  if (lens.id === "auto" || !lens.prompt)
+    fail(`${s2.id}: auto lens resolved to nothing`);
+}
+if (resolvedLens("bridge-viaduct", "auto").id !== "tele")
+  fail("a multi-span viaduct should default to the compressing telephoto");
+if (resolvedLens("tunnel-interior", "auto").id !== "wide-ts")
+  fail("a tunnel bore is confined and should default to the wide lens");
+// An explicit choice must beat the per-subject default.
+if (resolvedLens("bridge-viaduct", "standard").id !== "standard")
+  fail("an explicitly chosen lens must override the subject default");
+
+// The tails must not name a lens any more, or a chosen telephoto contradicts them.
+for (const style of ["describe", "instruct"] as const) {
+  const p2 = composePrompt("arch-exterior", "none", "daylight", style, "", null, {
+    lensId: "tele",
+    trafficId: "auto",
+    seasonId: "auto",
+    gradingId: "auto",
+  });
+  if (/24mm/.test(p2))
+    fail(`${style}: a telephoto prompt still contains the hardcoded 24mm tail`);
+  if (!/135mm/.test(p2)) fail(`${style}: the chosen telephoto is missing`);
+}
+
+// Axes left on auto must leave no trace.
+const bare = composePrompt("road-expressway", "none", "daylight");
+if (/Traffic:|Season:|Grading:/.test(bare))
+  fail("an auto quality axis leaked a labelled line into the prompt");
 
 if (composePrompt("nope", "none", "daylight") !== "")
   fail("unknown subject should compose to an empty string, not throw");

@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "./db";
+import { APP_NAME } from "./brand";
 import {
+  brandImage,
   compositeThroughMask,
   cropTo,
   imageSize,
@@ -267,12 +269,11 @@ async function processRegionEdit(
       box,
     });
 
-    const finalPath = await saveBuffer(
-      RENDERS_DIR,
-      composited,
-      "image/png",
-      `${id}-0`,
-    );
+    const branded = await brandImage(composited, "png", {
+      software: APP_NAME,
+      description: input.instruction.slice(0, 300),
+    });
+    const finalPath = await saveBuffer(RENDERS_DIR, branded, "image/png", `${id}-0`);
 
     await prisma.render.update({
       where: { id },

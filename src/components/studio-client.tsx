@@ -127,6 +127,10 @@ export function StudioClient() {
           prompt: data.prompt,
           extraDetails: data.extraDetails ?? "",
           lanesPerDirection: data.lanesPerDirection ?? null,
+          lensId: data.lensId ?? DEFAULT_SETTINGS.lensId,
+          trafficId: data.trafficId ?? DEFAULT_SETTINGS.trafficId,
+          seasonId: data.seasonId ?? DEFAULT_SETTINGS.seasonId,
+          gradingId: data.gradingId ?? DEFAULT_SETTINGS.gradingId,
           negativePrompt: data.negativePrompt ?? "",
           controlMode: data.controlMode,
           controlStrength: data.controlStrength,
@@ -175,6 +179,10 @@ export function StudioClient() {
           prompt: settings.prompt,
           extraDetails: settings.extraDetails || undefined,
           lanesPerDirection: settings.lanesPerDirection,
+          lensId: settings.lensId,
+          trafficId: settings.trafficId,
+          seasonId: settings.seasonId,
+          gradingId: settings.gradingId,
           negativePrompt: settings.negativePrompt || undefined,
           presetId: settings.subjectId,
           contextId: settings.contextId,
@@ -215,7 +223,7 @@ export function StudioClient() {
     <div className="flex flex-1 min-h-0">
       {/* Cards on the neutral page colour, as in the platform's content area —
           white panels need a non-white ground to read as panels. */}
-      <aside className="w-[360px] shrink-0 overflow-y-auto border-r border-border bg-page p-3">
+      <aside className="w-[510px] shrink-0 overflow-y-auto border-r border-border bg-page p-3">
         {noProviderConfigured ? <MissingKeyWarning providers={providers!} /> : null}
 
         <Panel title="Ảnh nguồn" className="mb-3">

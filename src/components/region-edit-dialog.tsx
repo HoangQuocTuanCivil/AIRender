@@ -226,7 +226,7 @@ export function RegionEditDialog({
           <div className="mt-auto space-y-2">
             {busy ? (
               <p className="flex items-center gap-2 text-[11px] text-ink-500">
-                <Spinner size={14} />
+                <Spinner size={28} />
                 {progress}
               </p>
             ) : null}

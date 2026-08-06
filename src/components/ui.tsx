@@ -120,7 +120,7 @@ export function Slider({
  * already dictates the readable colour.
  */
 export function Spinner({
-  size = 20,
+  size = 40,
   inherit = false,
   className,
   label = "Đang tải",

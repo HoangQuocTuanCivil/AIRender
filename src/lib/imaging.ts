@@ -196,6 +196,39 @@ export async function compositeThroughMask({
     .toBuffer();
 }
 
+/**
+ * Re-encode a finished render carrying this application's own metadata.
+ *
+ * sharp drops all input metadata unless told otherwise, so this both removes
+ * whatever tags the provider attached and stamps the file as ours.
+ *
+ * What it does NOT do — and must not be believed to do: Gemini image models
+ * embed SynthID, an invisible watermark carried in the pixels themselves. No
+ * amount of metadata rewriting touches it, and stripping it is not something
+ * this pipeline attempts. The file is branded, not laundered.
+ */
+export async function brandImage(
+  buffer: Buffer,
+  format: "jpeg" | "png",
+  meta: { software: string; artist?: string; description?: string },
+): Promise<Buffer> {
+  const pipeline = sharp(buffer).withMetadata({
+    exif: {
+      IFD0: {
+        Software: meta.software,
+        ...(meta.artist ? { Artist: meta.artist } : {}),
+        ...(meta.description ? { ImageDescription: meta.description } : {}),
+      },
+    },
+  });
+
+  return format === "png"
+    ? pipeline.png({ compressionLevel: 9 }).toBuffer()
+    : // 95 rather than the default 80: this is a deliverable, and it is being
+      // re-encoded only to carry the metadata, not to save bytes.
+      pipeline.jpeg({ quality: 95, mozjpeg: true }).toBuffer();
+}
+
 /** Fraction of the image the mask covers — used to warn about huge selections. */
 export async function maskCoverage(maskBuffer: Buffer): Promise<number> {
   const { data, info } = await sharp(maskBuffer)

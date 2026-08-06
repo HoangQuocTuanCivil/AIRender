@@ -153,7 +153,7 @@ export function HistoryClient() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Spinner size={24} />
+          <Spinner size={48} />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2.5 p-8 text-center">

@@ -5,6 +5,11 @@ import { ChevronDown, Dices, Info, RotateCcw } from "lucide-react";
 import {
   CONTEXT_MODIFIERS,
   CUSTOM_PRESET_ID,
+  DEFAULT_QUALITY,
+  GRADING_OPTIONS,
+  LENS_OPTIONS,
+  SEASON_OPTIONS,
+  TRAFFIC_OPTIONS,
   DEFAULT_CONTEXT_ID,
   DEFAULT_LIGHTING_ID,
   DEFAULT_RESOLUTION_ID,
@@ -17,8 +22,11 @@ import {
   composePrompt,
   defaultNegativePrompt,
   getSubject,
+  resolvedLens,
   subjectHasLanes,
   type PromptStyle,
+  type QualityOption,
+  type QualitySettings,
   type SubjectGroup,
 } from "@/lib/presets";
 import { CONTROL_MODES, type ControlMode } from "@/lib/providers/types";
@@ -55,6 +63,11 @@ export interface RenderSettings {
   extraDetails: string;
   /** Lanes per direction; null leaves the count to the model. */
   lanesPerDirection: number | null;
+  /** Image-quality axes: lens, traffic, season, grading. */
+  lensId: string;
+  trafficId: string;
+  seasonId: string;
+  gradingId: string;
   negativePrompt: string;
   controlMode: ControlMode;
   controlStrength: number;
@@ -85,6 +98,7 @@ function buildDefaults(): RenderSettings {
     ),
     extraDetails: "",
     lanesPerDirection: null,
+    ...DEFAULT_QUALITY,
     negativePrompt: defaultNegativePrompt(),
     controlMode: subject.defaults.controlMode,
     controlStrength: subject.defaults.controlStrength,
@@ -112,6 +126,7 @@ export function ControlPanel({
   disabled?: boolean;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [qualityOpen, setQualityOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<SubjectGroup>(
     getSubject(settings.subjectId)?.group ?? "Đường bộ",
   );
@@ -131,6 +146,10 @@ export function ControlPanel({
     lightingId?: string;
     extraDetails?: string;
     lanesPerDirection?: number | null;
+    lensId?: string;
+    trafficId?: string;
+    seasonId?: string;
+    gradingId?: string;
   }) => {
     const providerId = next.providerId ?? settings.providerId;
     const subjectId = next.subjectId ?? settings.subjectId;
@@ -141,6 +160,12 @@ export function ControlPanel({
       next.lanesPerDirection !== undefined
         ? next.lanesPerDirection
         : settings.lanesPerDirection;
+    const quality: QualitySettings = {
+      lensId: next.lensId ?? settings.lensId,
+      trafficId: next.trafficId ?? settings.trafficId,
+      seasonId: next.seasonId ?? settings.seasonId,
+      gradingId: next.gradingId ?? settings.gradingId,
+    };
     const subject = getSubject(subjectId);
 
     // Switching engine also switches prompt grammar: FLUX wants a scene
@@ -156,6 +181,7 @@ export function ControlPanel({
       lightingId,
       extraDetails,
       lanesPerDirection,
+      ...quality,
       presetId: subjectId,
       prompt: composePrompt(
         subjectId,
@@ -164,6 +190,7 @@ export function ControlPanel({
         style,
         extraDetails,
         lanesPerDirection,
+        quality,
       ),
       // Switching subject also adopts that structure type's tuning: a
       // cable-stayed bridge needs a much tighter grip than an urban street.
@@ -189,6 +216,8 @@ export function ControlPanel({
   const usableProviders = providers.filter((p) => p.configured && !p.editOnly);
   // Meaningless on a station platform or a building facade.
   const hasLanes = subjectHasLanes(settings.subjectId);
+  // Shown even when collapsed: the user should always know which lens is in play.
+  const autoLens = resolvedLens(settings.subjectId, settings.lensId);
 
   return (
     <div className="space-y-3">
@@ -488,6 +517,68 @@ export function ControlPanel({
         </Panel>
       ) : null}
 
+      <Panel
+        title={
+          <button
+            type="button"
+            onClick={() => setQualityOpen((open) => !open)}
+            className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-ink-500 uppercase hover:text-ink-950"
+          >
+            <ChevronDown
+              className={cn(
+                "h-3.5 w-3.5 transition-transform",
+                qualityOpen && "rotate-180",
+              )}
+            />
+            Chất ảnh
+          </button>
+        }
+      >
+        {qualityOpen ? (
+          <div className="space-y-3.5">
+            <QualityRow
+              label="Ống kính"
+              hint={
+                settings.lensId === "auto"
+                  ? `Tự động chọn ${autoLens.name} cho ${subject?.name ?? "loại này"} — ống kính dân chụp công trình hay dùng.`
+                  : undefined
+              }
+              options={LENS_OPTIONS}
+              value={settings.lensId}
+              disabled={disabled}
+              onChange={(lensId) => recompose({ lensId })}
+            />
+            <QualityRow
+              label="Mật độ giao thông"
+              options={TRAFFIC_OPTIONS}
+              value={settings.trafficId}
+              disabled={disabled}
+              onChange={(trafficId) => recompose({ trafficId })}
+            />
+            <QualityRow
+              label="Mùa"
+              options={SEASON_OPTIONS}
+              value={settings.seasonId}
+              disabled={disabled}
+              onChange={(seasonId) => recompose({ seasonId })}
+            />
+            <QualityRow
+              label="Phong cách hậu kỳ"
+              options={GRADING_OPTIONS}
+              value={settings.gradingId}
+              disabled={disabled}
+              onChange={(gradingId) => recompose({ gradingId })}
+            />
+          </div>
+        ) : (
+          <p className="text-[11px] leading-relaxed text-ink-500">
+            Ống kính <strong className="text-ink-800">{autoLens.name}</strong>
+            {settings.lensId === "auto" ? " (tự động)" : ""} · mở ra để chỉnh
+            giao thông, mùa và hậu kỳ.
+          </p>
+        )}
+      </Panel>
+
       <Panel title="Độ phân giải">
         <div className="flex gap-1.5">
           {RESOLUTION_TIERS.map((tier) => (
@@ -654,6 +745,58 @@ export function ControlPanel({
           </div>
         ) : null}
       </Panel>
+    </div>
+  );
+}
+
+
+/**
+ * One image-quality axis. Options are chips rather than a select so the whole
+ * choice set is visible — most users will not know what a 135mm lens does, and a
+ * collapsed dropdown never teaches them.
+ */
+function QualityRow({
+  label,
+  hint,
+  options,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: QualityOption[];
+  value: string;
+  disabled?: boolean;
+  onChange: (id: string) => void;
+}) {
+  const current = options.find((o) => o.id === value) ?? options[0];
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-xs font-semibold text-ink-800">{label}</label>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(option.id)}
+            title={option.description}
+            className={cn(
+              "rounded-[var(--radius-control)] border px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+              "disabled:pointer-events-none disabled:opacity-50",
+              value === option.id
+                ? "border-action bg-module-soft text-ink-950"
+                : "border-border bg-surface-2 text-ink-500 hover:bg-hover hover:text-ink-950",
+            )}
+          >
+            {option.name}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] leading-relaxed text-ink-500">
+        {hint ?? current.description}
+      </p>
     </div>
   );
 }
