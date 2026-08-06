@@ -6,21 +6,103 @@ Giao diện theo hệ thiết kế của `vcc-platform` (SGMT Enterprise Brand G
 
 ---
 
-## Bắt đầu nhanh
+## Cài đặt trên máy của bạn
+
+Ứng dụng chạy **hoàn toàn trên máy bạn**; chỉ riêng bước render là gọi lên cloud. Vì vậy **không cần GPU**, không cần server, và mọi ảnh cùng lịch sử render đều nằm lại trên ổ đĩa của bạn.
+
+### 1. Chuẩn bị
+
+| Cần | Ghi chú |
+|---|---|
+| **Node.js 20.19 trở lên** | khuyến nghị bản **22 LTS** hoặc **24**. Kiểm tra bằng `node -v`. Tải ở https://nodejs.org |
+| **Git** | để tải mã nguồn về. https://git-scm.com |
+| ~1,5 GB ổ đĩa trống | phần lớn là thư viện (`node_modules`) |
+| Tài khoản **fal.ai** có sẵn tiền | https://fal.ai — mỗi ảnh khoảng $0,025 (FLUX) hoặc $0,15 (Nano Banana Pro) |
+
+Windows, macOS và Linux đều chạy được như nhau.
+
+### 2. Tải về và cài
 
 ```bash
+git clone https://github.com/HoangQuocTuanCivil/AIRender.git
+cd AIRender
 npm install
 npm run db:push
 npm run app
 ```
 
-Mở http://localhost:3000, vào **Cài đặt** (biểu tượng bánh răng ở thanh trái) và dán `FAL_KEY` vào.
+Bốn lệnh, không phải sửa file nào cả:
 
-Key nhập trong Cài đặt được lưu vào file SQLite của ứng dụng và có hiệu lực ngay — không cần sửa file, không cần khởi động lại. Ai muốn cấu hình bằng file thì vẫn dùng được `.env.local` (`cp .env.example .env.local`); khi cả hai cùng có, key trong Cài đặt được ưu tiên.
+| Lệnh | Làm gì | Mất bao lâu |
+|---|---|---|
+| `npm install` | tải thư viện | ~20 giây |
+| `npm run db:push` | tạo file lịch sử SQLite (`prisma/dev.db`) | tức thì |
+| `npm run app` | build rồi chạy bản production | ~1 phút lần đầu |
 
-> `npm run app` chạy bản **production**. Dùng nó để làm việc hằng ngày: nhanh hơn và console sạch. `npm run dev` chỉ cần khi đang sửa code — chế độ dev in ra cảnh báo hydration mismatch mỗi lần tải trang nếu bạn có extension bảo mật/chặn quảng cáo chèn thuộc tính vào DOM (`bis_skin_checked`, `__processed_*`). Đó là chẩn đoán của React dành cho lập trình viên, không phải lỗi của app, và không xuất hiện ở bản production.
+Khi thấy dòng `Ready on http://localhost:3000` là xong.
 
-Chỉ cần **một** `FAL_KEY` (https://fal.ai/dashboard/keys) — nó chạy được cả hai engine chính.
+> **Không cần tạo file `.env`.** Bản vừa clone về chạy được ngay với cấu hình mặc định. Ai muốn cấu hình bằng file thì vẫn dùng được `.env.local` (`cp .env.example .env.local`); khi cả hai cùng có, key nhập trong Cài đặt được ưu tiên.
+
+### 3. Dán API key của bạn
+
+1. Mở https://fal.ai/dashboard/keys, tạo một key rồi copy.
+2. Mở http://localhost:3000, bấm **biểu tượng bánh răng** ở thanh trái để vào **Cài đặt**.
+3. Dán key vào ô **FAL_KEY**, bấm **Lưu**.
+
+Có hiệu lực **ngay lập tức** — không cần khởi động lại. Màn hình Studio sẽ hết báo "Chưa cấu hình" và nút **Render** sáng lên.
+
+Chỉ cần **một** `FAL_KEY` là đủ: nó chạy được cả hai engine chính (FLUX + ControlNet và Nano Banana Pro) lẫn engine sửa vùng FLUX Fill.
+
+Key được lưu vào file SQLite trên máy bạn (`prisma/dev.db`) ở dạng văn bản thường, chỉ được gửi tới chính nhà cung cấp khi render. File này đã nằm trong `.gitignore` nên không bao giờ bị đẩy lên repo — nhưng cũng đừng chép nó cho người khác.
+
+### 4. Những lần chạy sau
+
+```bash
+npm start
+```
+
+Nhanh hơn vì không build lại. Chỉ dùng `npm run app` sau khi mã nguồn thay đổi (vừa `git pull` chẳng hạn).
+
+### Cập nhật khi có bản mới
+
+```bash
+git pull
+npm install
+npm run db:push
+npm run app
+```
+
+`db:push` an toàn với dữ liệu đang có — nó chỉ thêm cột mới nếu schema thay đổi. Thư viện render cũ vẫn còn nguyên.
+
+### Dữ liệu của bạn nằm ở đâu
+
+| Thư mục | Chứa gì |
+|---|---|
+| `storage/` | ảnh nguồn đã upload + ảnh render + icon ứng dụng |
+| `prisma/dev.db` | lịch sử render, tham số từng lần, API key đã nhập |
+
+Cả hai đều được `.gitignore` — clone repo về sẽ **không** kéo theo ảnh hay key của người khác. Muốn sao lưu thì copy đúng hai chỗ này; muốn xoá sạch làm lại thì xoá cả hai rồi chạy `npm run db:push`.
+
+### Cho cả phòng dùng chung (tuỳ chọn)
+
+```bash
+npm start -- -H 0.0.0.0
+```
+
+Đồng nghiệp trong cùng mạng LAN mở `http://<IP-máy-bạn>:3000` là dùng được, chung một thư viện và một API key. Ứng dụng **không có đăng nhập**, nên chỉ làm điều này trong mạng nội bộ tin cậy.
+
+### Gặp lỗi?
+
+| Hiện tượng | Xử lý |
+|---|---|
+| `EADDRINUSE ... :3000` | cổng 3000 đang bị chiếm. Đóng tiến trình cũ, hoặc chạy `npm start -- -p 3001` |
+| `npm install` báo `Unsupported engine` | Node quá cũ. `node -v` phải ≥ 20.19 |
+| Cài đặt vẫn báo "Chưa cấu hình" sau khi dán key | key sai định dạng hoặc đã bị thu hồi — tạo key mới trên fal.ai |
+| `Không upload được ảnh lên fal.ai: fetch failed` | lỗi mạng lúc gửi ảnh lên, bấm Render lại |
+| Render báo hết số dư | nạp thêm tiền vào tài khoản fal.ai |
+| Trang trắng, console đầy cảnh báo hydration | bạn đang chạy `npm run dev` với extension chặn quảng cáo. Xem ghi chú ngay dưới |
+
+> `npm run app` / `npm start` chạy bản **production** — dùng nó để làm việc hằng ngày: nhanh hơn và console sạch. `npm run dev` chỉ cần khi đang sửa code; chế độ dev in ra cảnh báo hydration mismatch mỗi lần tải trang nếu bạn có extension bảo mật/chặn quảng cáo chèn thuộc tính vào DOM (`bis_skin_checked`, `__processed_*`). Đó là chẩn đoán của React dành cho lập trình viên, không phải lỗi của app, và không xuất hiện ở bản production.
 
 ### Hai engine, hai cách làm việc khác nhau
 
@@ -88,6 +170,8 @@ Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây c�
 | **Cầu** | Dây văng · Treo dây võng · Dầm hộp/extradosed · Vòm · Cầu cạn nhiều nhịp · Cầu vượt đô thị · Từ bản vẽ mặt đứng |
 | **Hầm** | Cửa hầm · Trong hầm · Hầm chui đô thị |
 | **Kiến trúc** | Ngoại thất · Nội thất · Phối cảnh tổng thể · Ảnh thi công |
+
+> **Cao tốc thì nhà dân không nằm sát đường.** Các preset là đường kiểm soát lối ra vào — *Cao tốc tuyến chính · Đường miền núi · Nút giao liên thông · Trạm thu phí* — tự động kèm ràng buộc: hàng rào ranh giới chạy liên tục hai bên, dải đất sát mặt đường để trống, nhà cửa và làng mạc lùi ra sau hàng rào qua một dải đệm rộng hơn cả mặt đường, mọi lối vào nhà đi bằng **đường gom riêng** bên ngoài hàng rào. Nếu không có ràng buộc này, model đặt nhà và ngõ ra thẳng mép đường — đúng với quốc lộ, sai với cao tốc. *Đường đô thị* và *Cầu vượt đô thị* thì không, vì ở đó nhà sát vỉa hè mới là đúng.
 
 **Bối cảnh** (10) — viết riêng cho địa hình Việt Nam, vì prompt chung chung cho ra rừng thông ôn đới và lề đường kiểu Mỹ:
 

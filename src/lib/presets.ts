@@ -174,7 +174,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
     id: "road-mountain",
     name: "Đường miền núi",
     description:
-      "Đường đèo bám sườn núi: mái taluy, tường chắn, rãnh dọc. Hợp tuyến Cao Bằng – Bắc Kạn.",
+      "Cao tốc bám sườn núi: mái taluy, tường chắn, rãnh dọc, hàng rào bảo vệ. Hợp tuyến Cao Bằng – Bắc Kạn.",
     group: "Đường bộ",
     prompt:
       "Photorealistic mountain highway cut into a steep hillside, sweeping horizontal curve following " +
@@ -186,6 +186,9 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "and regular joint pattern, continuous drainage channel with constant cross-section, guardrail " +
       "posts evenly spaced following the curve, lane markings continuous around the curve, " +
       NO_TEXT_CLAUSE,
+    // Mountain alignments in this practice are expressways (Cao Bằng – Bắc Kạn,
+    // Đồng Đăng – Trà Lĩnh), not provincial pass roads.
+    accessControlled: true,
     defaultLens: "tele",
     defaults: {
       controlMode: "depth",

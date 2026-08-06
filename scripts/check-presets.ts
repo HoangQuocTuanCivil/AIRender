@@ -135,7 +135,12 @@ if (/lanes in total/.test(composePrompt("road-expressway", "none", "daylight")))
 // house fronts onto it. The clause has to survive every context, because it is
 // exactly the rural contexts — which describe villages and farmhouses — that
 // otherwise put dwellings on the verge.
-for (const id of ["road-expressway", "road-interchange", "road-toll-plaza"]) {
+for (const id of [
+  "road-expressway",
+  "road-mountain",
+  "road-interchange",
+  "road-toll-plaza",
+]) {
   for (const c of CONTEXT_MODIFIERS) {
     for (const style of ["describe", "instruct"] as const) {
       const p = composePrompt(id, c.id, "daylight", style);
@@ -146,9 +151,9 @@ for (const id of ["road-expressway", "road-interchange", "road-toll-plaza"]) {
     }
   }
 }
-// It must stay off roads that are not access-controlled — a provincial road
-// through a village correctly has houses on the verge.
-for (const id of ["road-urban", "road-mountain", "arch-exterior"]) {
+// It must stay off roads that are not access-controlled — a city street
+// correctly has shopfronts right at the kerb.
+for (const id of ["road-urban", "bridge-urban-flyover", "arch-exterior"]) {
   if (/boundary fence/.test(composePrompt(id, "paddy-central", "daylight")))
     fail(`${id}: access-control clause leaked onto an uncontrolled road`);
 }
