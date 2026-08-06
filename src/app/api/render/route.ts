@@ -11,6 +11,7 @@ const bodySchema = z.object({
   height: z.number().int().min(64).max(8192),
   prompt: z.string().min(1, "Prompt không được để trống").max(4000),
   extraDetails: z.string().max(1000).optional(),
+  lanesPerDirection: z.number().int().min(1).max(6).nullable().optional(),
   negativePrompt: z.string().max(4000).optional(),
   presetId: z.string().optional(),
   contextId: z.string().optional(),

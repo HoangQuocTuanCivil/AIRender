@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
-import { getBrandIconUrl } from "@/lib/settings";
+import { getBrandIconUrl, getRailColorId } from "@/lib/settings";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -36,11 +36,12 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // The icon is a setting, read through a synchronous SQLite driver. Without
-  // this the query would run during prerendering and the shell would keep
-  // whatever icon was set at build time.
+  // The icon and rail colour are settings, read through a synchronous SQLite
+  // driver. Without this the queries would run during prerendering and the shell
+  // would keep whatever was set at build time.
   await connection();
   const brandIconUrl = await getBrandIconUrl();
+  const railColorId = await getRailColorId();
 
   return (
     <html
@@ -58,7 +59,9 @@ export default async function RootLayout({
           we control, and harmless — but it makes React log a hydration mismatch
           on every load, which buries real warnings. */}
       <body suppressHydrationWarning className="min-h-full bg-page text-ink-950">
-        <AppShell brandIconUrl={brandIconUrl}>{children}</AppShell>
+        <AppShell brandIconUrl={brandIconUrl} railColorId={railColorId}>
+          {children}
+        </AppShell>
         <Toaster
           position="bottom-right"
           toastOptions={{

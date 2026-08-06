@@ -42,8 +42,10 @@ model Render {
   prompt String
   /// Free text the user added for this project, kept separate from the composed
   /// prompt so a replay can re-compose without losing it.
-  extraDetails   String?
-  negativePrompt String?
+  extraDetails String?
+  /// Lanes per direction the user pinned, null when left to the model.
+  lanesPerDirection Int?
+  negativePrompt    String?
   controlStrength Float
   strength        Float
   guidanceScale   Float

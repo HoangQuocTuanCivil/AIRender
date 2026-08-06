@@ -56,10 +56,15 @@ export function CompareSlider({
         updateFromClientX(event.clientX);
       }}
     >
+      {/* The render is the base layer and sizes the box, so it is what shows to
+          the RIGHT of the handle — matching the "Render" label over there.
+          `inset(0 X% 0 0)` clips from the right, so the clipped overlay is what
+          appears on the LEFT; that has to be the source image. Having these the
+          other way round is what made the two labels point at the wrong halves. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={beforeUrl}
-        alt="Ảnh gốc"
+        src={afterUrl}
+        alt="Ảnh render"
         draggable={false}
         className="block max-h-[70vh] w-full object-contain"
       />
@@ -68,12 +73,17 @@ export function CompareSlider({
         className="absolute inset-0"
         style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
       >
+        {/* object-cover, not contain: providers do not always return the source
+            aspect exactly (1024×576 in, 1376×768 back), and two contained images
+            of different aspect letterbox independently — the wipe line then sits
+            at a different point in each picture, which defeats the comparison.
+            Filling the same box costs a fraction of a percent of crop. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={afterUrl}
-          alt="Ảnh render"
+          src={beforeUrl}
+          alt="Ảnh gốc"
           draggable={false}
-          className="block h-full w-full object-contain"
+          className="block h-full w-full object-cover"
         />
       </div>
 

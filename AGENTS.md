@@ -78,6 +78,8 @@ Every subject carries an `accuracy` clause naming the details that structure typ
 
 Subject defaults encode how tightly each structure must grip its geometry: bridges and tunnels 0.92–0.97, railways 0.90, roads 0.85–0.90. Keep that ordering — `check:presets` asserts it.
 
+`lanesPerDirection` is a structured field, not prose in `extraDetails`, because the composer can then repeat the number several ways in one clause — per direction, as a total, and as a "never changes" constraint — and place it first, where FLUX weights it most. Diffusion models miscount when a number is mentioned once; `check:presets` asserts the clause states it at least twice. It only applies to subjects in `CARRIAGEWAY_GROUPS`; `composePrompt` drops it for stations and buildings rather than trusting the caller.
+
 `extraDetails` is the user's project-specific free text and is kept as its own field, never merged into `prompt` state. Changing an axis re-composes the whole prompt, so anything typed directly into the prompt box is discarded — `extraDetails` is the field that survives that, and `check:presets` asserts it appears in both grammars across axis changes. Do not "simplify" it away by folding it into the prompt string.
 
 ## Styling

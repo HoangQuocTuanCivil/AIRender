@@ -14,6 +14,7 @@ import {
   composePrompt,
   getResolution,
   getSubject,
+  subjectHasLanes,
 } from "../src/lib/presets";
 
 let failures = 0;
@@ -101,6 +102,33 @@ for (const style of ["describe", "instruct"] as const) {
   if (/,\s*,/.test(blank) || /Project specifics:\s*\./.test(blank))
     fail(`${style}: blank project specifics left a dangling fragment`);
 }
+
+// Lane count must reach both grammars, and must be stated more than once —
+// a single mention is what diffusion models miscount.
+for (const style of ["describe", "instruct"] as const) {
+  const p = composePrompt("road-expressway", "none", "daylight", style, "", 3);
+  const mentions = (p.match(/\b3\b/g) ?? []).length;
+  if (mentions < 2)
+    fail(`${style}: lane count stated only ${mentions}× — needs repetition`);
+  if (!p.includes("6 lanes in total"))
+    fail(`${style}: lane clause is missing the total across the carriageway`);
+}
+
+// A lane count is meaningless on subjects with no carriageway, and asking for
+// one would only confuse the model.
+for (const id of ["rail-station", "arch-interior"]) {
+  if (subjectHasLanes(id)) fail(`${id} should not accept a lane count`);
+  const p = composePrompt(id, "none", "daylight", "describe", "", 4);
+  if (/\b8 lanes in total\b/.test(p))
+    fail(`${id}: lane clause leaked into a subject with no carriageway`);
+}
+for (const id of ["road-expressway", "bridge-viaduct", "tunnel-interior"]) {
+  if (!subjectHasLanes(id)) fail(`${id} carries a carriageway and should accept lanes`);
+}
+
+// Omitting the count must leave no trace of the clause.
+if (/lanes in total/.test(composePrompt("road-expressway", "none", "daylight")))
+  fail("lane clause appears even when no count was given");
 
 if (composePrompt("nope", "none", "daylight") !== "")
   fail("unknown subject should compose to an empty string, not throw");

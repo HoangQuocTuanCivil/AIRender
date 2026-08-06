@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { DEFAULT_RAIL_COLOR_ID, RAIL_COLORS } from "@/lib/brand";
 import { describeProviders } from "@/lib/providers";
 import {
+  BRAND_RAIL_COLOR_KEY,
   getBrandIconUrl,
+  getRailColorId,
   loadSettings,
   maskSecret,
   putSetting,
@@ -28,7 +31,17 @@ export interface CredentialInfo {
 
 export interface SettingsResponse {
   credentials: CredentialInfo[];
-  brand: { iconUrl: string | null };
+  brand: { iconUrl: string | null; railColorId: string };
+}
+
+async function buildResponse(): Promise<SettingsResponse> {
+  return {
+    credentials: describeCredentials(),
+    brand: {
+      iconUrl: await getBrandIconUrl(),
+      railColorId: await getRailColorId(),
+    },
+  };
 }
 
 /**
@@ -62,21 +75,26 @@ function describeCredentials(): CredentialInfo[] {
 export async function GET() {
   await loadSettings();
 
-  const body: SettingsResponse = {
-    credentials: describeCredentials(),
-    brand: { iconUrl: await getBrandIconUrl() },
-  };
-
-  return NextResponse.json(body, {
+  return NextResponse.json(await buildResponse(), {
     headers: { "Cache-Control": "no-store" },
   });
 }
 
-const bodySchema = z.object({
-  env: z.string().min(1),
-  /** Empty or null clears the stored key and falls back to the environment. */
-  value: z.string().max(500).nullable(),
-});
+/**
+ * Two shapes so the one screen writes through one route. The credential shape
+ * came first and is left untouched, so this stays backwards compatible.
+ */
+const bodySchema = z.union([
+  z.object({
+    env: z.string().min(1),
+    /** Empty or null clears the stored key and falls back to the environment. */
+    value: z.string().max(500).nullable(),
+  }),
+  z.object({
+    /** Palette id; null restores the default. */
+    railColor: z.string().max(40).nullable(),
+  }),
+]);
 
 export async function PUT(request: Request) {
   let json: unknown;
@@ -96,6 +114,23 @@ export async function PUT(request: Request) {
 
   await loadSettings();
 
+  if ("railColor" in parsed.data) {
+    const id = parsed.data.railColor;
+    // Store the palette id, never a raw colour: an arbitrary hex written here
+    // would end up painted behind the rail's white icons.
+    if (id !== null && !RAIL_COLORS.some((c) => c.id === id)) {
+      return NextResponse.json(
+        { error: `Không có màu nào tên "${id}".` },
+        { status: 400 },
+      );
+    }
+    await putSetting(
+      BRAND_RAIL_COLOR_KEY,
+      id === null || id === DEFAULT_RAIL_COLOR_ID ? null : id,
+    );
+    return NextResponse.json(await buildResponse());
+  }
+
   // Only keys an engine actually asks for. Otherwise this route is a
   // write-anything endpoint into the settings table.
   const known = new Set(describeProviders().map((p) => p.apiKeyEnv));
@@ -106,13 +141,7 @@ export async function PUT(request: Request) {
     );
   }
 
-  const value = parsed.data.value?.trim() || null;
-  await putSetting(parsed.data.env, value);
+  await putSetting(parsed.data.env, parsed.data.value?.trim() || null);
 
-  const body: SettingsResponse = {
-    credentials: describeCredentials(),
-    brand: { iconUrl: await getBrandIconUrl() },
-  };
-
-  return NextResponse.json(body);
+  return NextResponse.json(await buildResponse());
 }

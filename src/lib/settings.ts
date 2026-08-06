@@ -1,3 +1,4 @@
+import { railColorById } from "./brand";
 import { prisma } from "./db";
 import { publicUrlFor } from "./storage";
 
@@ -12,6 +13,7 @@ import { publicUrlFor } from "./storage";
  */
 
 export const BRAND_ICON_KEY = "brand.iconPath";
+export const BRAND_RAIL_COLOR_KEY = "brand.railColor";
 
 /** Where the credential actually in use came from. */
 export type SecretSource = "settings" | "env" | "none";
@@ -88,4 +90,14 @@ export async function getBrandIconPath(): Promise<string | null> {
 export async function getBrandIconUrl(): Promise<string | null> {
   const path = await getBrandIconPath();
   return path ? publicUrlFor(path) : null;
+}
+
+/**
+ * Id of the chosen rail colour, or the default. Returns the id rather than the
+ * hex so an unknown value (a palette entry removed later) degrades to the
+ * default instead of painting the rail with a dead string.
+ */
+export async function getRailColorId(): Promise<string> {
+  await loadSettings();
+  return railColorById(storedValue(BRAND_RAIL_COLOR_KEY)).id;
 }

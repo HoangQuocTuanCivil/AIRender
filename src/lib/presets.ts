@@ -843,6 +843,33 @@ export function getLighting(id: string | null | undefined) {
 
 export type PromptStyle = "describe" | "instruct";
 
+/** Groups whose subjects carry a road carriageway, so a lane count applies. */
+const CARRIAGEWAY_GROUPS: SubjectGroup[] = ["Đường bộ", "Cầu", "Hầm"];
+
+export function subjectHasLanes(subjectId: string): boolean {
+  const subject = getSubject(subjectId);
+  return subject ? CARRIAGEWAY_GROUPS.includes(subject.group) : false;
+}
+
+export const MAX_LANES_PER_DIRECTION = 6;
+
+/**
+ * Lane count is the single detail reviewers check first, and diffusion models
+ * are poor at counting. Naming the number several ways in one clause — per
+ * direction, as a total, and as a "must not change" constraint — measurably
+ * beats a single mention, so this is deliberately repetitive rather than terse.
+ */
+function lanesClause(lanes: number): string {
+  const total = lanes * 2;
+  return (
+    `exactly ${lanes} traffic ${lanes === 1 ? "lane" : "lanes"} in each direction, ` +
+    `${total} lanes in total across the full carriageway, ` +
+    `${lanes} on the near side and ${lanes} on the far side of the central median, ` +
+    `the same ${lanes} lanes per direction held continuously from the foreground ` +
+    `to the vanishing point, the lane count never changing anywhere in the frame`
+  );
+}
+
 /**
  * Order matters. FLUX weights earlier tokens more heavily, so the structure and
  * its accuracy constraints come first, then where it sits, then how it is lit,
@@ -853,11 +880,15 @@ function composeDescribePrompt(
   contextId: string,
   lightingId: string,
   extra?: string,
+  lanes?: number | null,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
 
   return [
     subject.prompt,
+    // Right after the subject, ahead of the other accuracy constraints: FLUX
+    // weights earlier tokens more heavily and this is the one a reviewer counts.
+    lanes ? lanesClause(lanes) : undefined,
     subject.accuracy,
     getContext(contextId)?.prompt,
     getLighting(lightingId)?.prompt,
@@ -882,6 +913,7 @@ function composeInstructPrompt(
   contextId: string,
   lightingId: string,
   extra?: string,
+  lanes?: number | null,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
   const context = getContext(contextId)?.prompt;
@@ -893,8 +925,13 @@ function composeInstructPrompt(
     "Keep the existing geometry, proportions, camera angle and composition exactly as they are. Do not add, remove, relocate or reshape any structural element, and do not change the number of any repeated element.",
     "",
     `Subject: ${subject.prompt}.`,
-    `Preserve precisely: ${subject.accuracy}.`,
   ];
+
+  // Its own line, above the general constraints: an edit model follows a
+  // numbered requirement far better when it is not buried in a long clause.
+  if (lanes) lines.push(`Lane count — this is mandatory: ${lanesClause(lanes)}.`);
+
+  lines.push(`Preserve precisely: ${subject.accuracy}.`);
 
   if (context) lines.push(`Environment: ${context}.`);
   if (lighting) lines.push(`Lighting: ${lighting}.`);
@@ -915,13 +952,19 @@ export function composePrompt(
    * prompt so that changing an axis re-composes without discarding it.
    */
   extra?: string,
+  /** Lanes per direction; null/0 leaves the count unconstrained. */
+  lanes?: number | null,
 ): string {
   const subject = getSubject(subjectId);
   if (!subject) return "";
 
+  // A lane count on a railway station or a building is meaningless, and asking
+  // for one would only confuse the model.
+  const effectiveLanes = subjectHasLanes(subjectId) ? lanes : null;
+
   return style === "instruct"
-    ? composeInstructPrompt(subject, contextId, lightingId, extra)
-    : composeDescribePrompt(subject, contextId, lightingId, extra);
+    ? composeInstructPrompt(subject, contextId, lightingId, extra, effectiveLanes)
+    : composeDescribePrompt(subject, contextId, lightingId, extra, effectiveLanes);
 }
 
 export function defaultNegativePrompt(): string {

@@ -113,9 +113,10 @@ Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây c�
 
 Ba trục lo phần chung. Những gì **chỉ dự án của bạn mới có** thì gõ vào ô **Chi tiết riêng của dự án** — nội dung đó được nối vào prompt và **không bị mất khi đổi trục**.
 
+> **Số làn xe có ô riêng, không phải gõ tay.** Với công trình có mặt đường (Đường bộ · Cầu · Hầm), panel Prompt hiện ô **Số làn xe mỗi hướng** — bấm chọn 1–6 hoặc *Không ép*. Ràng buộc được đưa **lên đầu prompt** và nhắc lại nhiều cách (mỗi hướng, tổng số, và "không được đổi ở bất kỳ đâu trong khung hình"), vì model khuếch tán đếm rất kém nếu chỉ nói một lần. Đã kiểm chứng: ép 3 làn → ảnh ra đúng 3 làn mỗi hướng, tổng 6 làn.
+
 | Muốn gì | Gõ gì |
 |---|---|
-| Đúng số làn | `exactly 4 lanes in each direction` |
 | Dây văng kiểu đàn hạc | `stay cables in a harp arrangement, all parallel` |
 | Vật liệu cụ thể | `weathering steel girder`, `white architectural concrete piers` |
 | Màu sơn công trình | `pylon painted deep red` |

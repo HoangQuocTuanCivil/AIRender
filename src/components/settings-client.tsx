@@ -2,14 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, ImageUp, Loader2, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  ImageUp,
+  Loader2,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import type {
   CredentialInfo,
   SettingsResponse,
 } from "@/app/api/settings/route";
-import { APP_NAME, BRAND_INITIALS, MAX_ICON_BYTES } from "@/lib/brand";
+import {
+  APP_NAME,
+  BRAND_INITIALS,
+  MAX_ICON_BYTES,
+  RAIL_COLORS,
+  railColorById,
+} from "@/lib/brand";
 import { Badge, Button, Input, Panel } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 /**
  * Configuration screen: the API keys the engines need, and the icon shown in the
@@ -65,20 +79,22 @@ export function SettingsClient() {
           <IconPanel
             iconUrl={data.brand.iconUrl}
             onChange={(iconUrl) => {
-              setData({ ...data, brand: { iconUrl } });
+              setData({ ...data, brand: { ...data.brand, iconUrl } });
+              // The rail is rendered by the root layout on the server.
+              router.refresh();
+            }}
+          />
+
+          <RailColorPanel
+            selectedId={data.brand.railColorId}
+            onSaved={(body) => {
+              setData(body);
               // The rail is rendered by the root layout on the server.
               router.refresh();
             }}
           />
 
           <Panel title="API key">
-            <p className="text-[12px] leading-relaxed text-ink-500">
-              Key được lưu trong file SQLite của ứng dụng (dạng chữ thường, không
-              mã hoá) và có hiệu lực ngay ở lần render tiếp theo. Key nhập ở đây
-              được ưu tiên hơn biến môi trường cùng tên trong{" "}
-              <code className="font-mono text-ink-700">.env.local</code>.
-            </p>
-
             <div className="space-y-3">
               {data.credentials.map((credential) => (
                 <CredentialRow
@@ -153,22 +169,35 @@ function IconPanel({
   return (
     <Panel title="Nhận diện ứng dụng">
       <div className="flex items-center gap-4">
-        {/* Same dark surface as the rail, in both themes, so the preview shows
-            the icon in the context it will actually appear in. */}
-        <div className="grid h-14 w-14 flex-none place-items-center overflow-hidden rounded-[var(--radius-md)] bg-rail text-[13px] font-bold tracking-tight text-white">
-          {iconUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={iconUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            BRAND_INITIALS
-          )}
+        {/* The rail's dark navy behind the same white plate the shell draws, so
+            the preview shows the logo in the context it will appear in. */}
+        {/* bg-bar, not bg-rail: the shell darkens the chosen colour before
+            painting it, and the preview has to show the same surface. */}
+        <div className="grid h-14 flex-none place-items-center rounded-[var(--radius-md)] bg-bar px-3">
+          {/* The shell's plate pulls itself left over the rail; here it is just
+              a preview, so cancel that offset. */}
+          <span className="vx-brand-plate" style={{ marginLeft: 0 }}>
+            {iconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={iconUrl}
+                alt=""
+                className="h-[26px] w-auto max-w-[180px] object-contain"
+              />
+            ) : (
+              <span className="text-[13px] font-extrabold tracking-tight">
+                {BRAND_INITIALS}
+              </span>
+            )}
+          </span>
         </div>
 
         <div className="min-w-0 flex-1 space-y-1">
           <p className="text-[13px] font-semibold text-ink-950">{APP_NAME}</p>
           <p className="text-[11.5px] leading-relaxed text-ink-500">
-            Icon hiển thị ở đầu thanh điều hướng bên trái. Ảnh vuông cho kết quả
-            tốt nhất — PNG, JPG, WebP hoặc AVIF, tối đa{" "}
+            Logo hiển thị trên tấm nền trắng ở góc trên bên trái. Ảnh nằm ngang
+            hay vuông đều được — chiều cao co về 26px, chiều ngang tự theo tỉ lệ,
+            không bị cắt. PNG nền trong suốt là đẹp nhất; tối đa{" "}
             {MAX_ICON_BYTES / 1024 / 1024} MB.
           </p>
         </div>
@@ -207,6 +236,88 @@ function IconPanel({
           ) : null}
         </div>
       </div>
+    </Panel>
+  );
+}
+
+function RailColorPanel({
+  selectedId,
+  onSaved,
+}: {
+  selectedId: string;
+  onSaved: (body: SettingsResponse) => void;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const choose = async (id: string) => {
+    if (id === selectedId) return;
+    setBusy(id);
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ railColor: id }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Không lưu được màu.");
+      onSaved(body as SettingsResponse);
+      toast.success("Đã đổi màu thanh điều hướng.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không lưu được màu.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <Panel title="Màu thanh điều hướng">
+      <p className="text-[11.5px] leading-relaxed text-ink-500">
+        Màu của thanh dọc bên trái. Mỗi màu được làm tối lại trước khi dùng làm
+        nền, để icon trắng luôn đọc được — nên ô xem trước dưới đây hiển thị đúng
+        màu cuối cùng, không phải màu gốc.
+      </p>
+
+      <div className="flex flex-wrap gap-2">
+        {RAIL_COLORS.map((color) => {
+          const on = color.id === selectedId;
+          return (
+            <button
+              key={color.id}
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void choose(color.id)}
+              title={color.name}
+              aria-label={color.name}
+              aria-pressed={on}
+              className={cn(
+                "relative grid h-11 w-11 place-items-center rounded-[var(--radius-md)]",
+                "border-2 transition-transform disabled:opacity-50",
+                on
+                  ? "border-action scale-105"
+                  : "border-transparent hover:scale-105",
+              )}
+              style={{
+                // Same mix as --bar in globals.css, so the swatch previews the
+                // colour the rail will actually be, not the raw palette entry.
+                background: `color-mix(in srgb, ${color.hex} 78%, #0a0d14)`,
+              }}
+            >
+              {busy === color.id ? (
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+              ) : on ? (
+                <Check className="h-4 w-4 text-white" />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[11px] text-ink-500">
+        Đang chọn:{" "}
+        <span className="font-medium text-ink-800">
+          {railColorById(selectedId).name}
+        </span>
+      </p>
     </Panel>
   );
 }

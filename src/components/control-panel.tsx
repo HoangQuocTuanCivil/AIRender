@@ -10,12 +10,14 @@ import {
   DEFAULT_RESOLUTION_ID,
   DEFAULT_SUBJECT_ID,
   LIGHTING_MODIFIERS,
+  MAX_LANES_PER_DIRECTION,
   RESOLUTION_TIERS,
   SUBJECT_GROUPS,
   SUBJECT_PRESETS,
   composePrompt,
   defaultNegativePrompt,
   getSubject,
+  subjectHasLanes,
   type PromptStyle,
   type SubjectGroup,
 } from "@/lib/presets";
@@ -45,6 +47,8 @@ export interface RenderSettings {
   prompt: string;
   /** Project-specific free text, appended to the composed prompt. */
   extraDetails: string;
+  /** Lanes per direction; null leaves the count to the model. */
+  lanesPerDirection: number | null;
   negativePrompt: string;
   controlMode: ControlMode;
   controlStrength: number;
@@ -74,6 +78,7 @@ function buildDefaults(): RenderSettings {
       "describe",
     ),
     extraDetails: "",
+    lanesPerDirection: null,
     negativePrompt: defaultNegativePrompt(),
     controlMode: subject.defaults.controlMode,
     controlStrength: subject.defaults.controlStrength,
@@ -119,12 +124,17 @@ export function ControlPanel({
     contextId?: string;
     lightingId?: string;
     extraDetails?: string;
+    lanesPerDirection?: number | null;
   }) => {
     const providerId = next.providerId ?? settings.providerId;
     const subjectId = next.subjectId ?? settings.subjectId;
     const contextId = next.contextId ?? settings.contextId;
     const lightingId = next.lightingId ?? settings.lightingId;
     const extraDetails = next.extraDetails ?? settings.extraDetails;
+    const lanesPerDirection =
+      next.lanesPerDirection !== undefined
+        ? next.lanesPerDirection
+        : settings.lanesPerDirection;
     const subject = getSubject(subjectId);
 
     // Switching engine also switches prompt grammar: FLUX wants a scene
@@ -139,8 +149,16 @@ export function ControlPanel({
       contextId,
       lightingId,
       extraDetails,
+      lanesPerDirection,
       presetId: subjectId,
-      prompt: composePrompt(subjectId, contextId, lightingId, style, extraDetails),
+      prompt: composePrompt(
+        subjectId,
+        contextId,
+        lightingId,
+        style,
+        extraDetails,
+        lanesPerDirection,
+      ),
       // Switching subject also adopts that structure type's tuning: a
       // cable-stayed bridge needs a much tighter grip than an urban street.
       ...(next.subjectId && subject
@@ -160,6 +178,8 @@ export function ControlPanel({
   const groupSubjects = SUBJECT_PRESETS.filter((p) => p.group === activeGroup);
   const engine = providers.find((p) => p.id === settings.providerId);
   const usesControlNet = engine?.supportsControlNet ?? true;
+  // Meaningless on a station platform or a building facade.
+  const hasLanes = subjectHasLanes(settings.subjectId);
 
   return (
     <div className="space-y-3">
@@ -316,6 +336,62 @@ export function ControlPanel({
           ) : null
         }
       >
+        {/* Lane count is a number, not prose: the composer can then repeat it in
+            the several ways a diffusion model actually needs to get counting
+            right, and the user never has to phrase it in English. */}
+        {hasLanes ? (
+          <Field
+            label="Số làn xe mỗi hướng"
+            hint="Ràng buộc bắt buộc đưa lên đầu prompt. Để trống nếu không cần ép số làn."
+          >
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => recompose({ lanesPerDirection: null })}
+                className={cn(
+                  "h-9 rounded-[var(--radius-control)] border px-3 text-[12px] font-medium transition-colors",
+                  "disabled:pointer-events-none disabled:opacity-50",
+                  settings.lanesPerDirection === null
+                    ? "border-action bg-module-soft text-ink-950"
+                    : "border-border bg-surface-2 text-ink-500 hover:bg-hover",
+                )}
+              >
+                Không ép
+              </button>
+              {Array.from({ length: MAX_LANES_PER_DIRECTION }, (_, i) => i + 1).map(
+                (n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => recompose({ lanesPerDirection: n })}
+                    title={`${n} làn mỗi hướng — tổng ${n * 2} làn`}
+                    className={cn(
+                      "h-9 w-9 rounded-[var(--radius-control)] border text-[12px] font-semibold transition-colors",
+                      "disabled:pointer-events-none disabled:opacity-50",
+                      settings.lanesPerDirection === n
+                        ? "border-action bg-module-soft text-ink-950"
+                        : "border-border bg-surface-2 text-ink-500 hover:bg-hover",
+                    )}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
+            </div>
+            {settings.lanesPerDirection ? (
+              <p className="text-[11px] text-ink-500">
+                Tổng{" "}
+                <strong className="text-ink-800">
+                  {settings.lanesPerDirection * 2} làn
+                </strong>{" "}
+                trên toàn mặt cắt ngang.
+              </p>
+            ) : null}
+          </Field>
+        ) : null}
+
         {/* The safe place to type. Held as its own field, so changing an axis
             re-composes the prompt around it instead of discarding it. */}
         <Field

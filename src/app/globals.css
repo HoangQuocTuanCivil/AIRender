@@ -120,6 +120,8 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-rail: var(--rail);
+  /* Only resolves inside .vx-shell, where --bar is declared. */
+  --color-bar: var(--bar);
 
   --color-ink-950: var(--ink-950);
   --color-ink-800: var(--ink-800);
@@ -194,6 +196,14 @@ body {
   /* Derived here, on the same element that carries the inline --module, because
      a custom property resolves var() against the element it is declared on. */
   --module-soft: color-mix(in srgb, var(--module) 12%, #ffffff);
+
+  /* One bar colour for both chrome surfaces — the vertical rail and the header
+     row read as a single L-shaped frame, so they must never drift apart. Derived
+     once here and used by both; never paint the chosen colour raw, because the
+     bar carries white icons and text and the lighter palette entries (orange,
+     green, sky blue) do not hold white at full strength. vcc-platform applies
+     the same rule to its --vx-bar. */
+  --bar: color-mix(in srgb, var(--rail) 78%, #0a0d14);
 }
 
 [data-vx-dark="1"] .vx-shell {
@@ -207,14 +217,60 @@ body {
 }
 
 .vx-rail {
+  /* --bar, not --rail: the darkening formula lives once on .vx-shell so the rail
+     and the header row can never drift apart. Never paint the chosen colour raw
+     — the rail carries white icons, and the lighter palette entries (sky blue,
+     orange, green) do not hold white at full strength.
+     The first declaration is the fallback for engines without color-mix. */
   background: var(--rail);
+  background: var(--bar);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 10px;
+  /* Top padding clears the header row: the logo plate lives in the header but
+     reaches back over this column, so the icons have to start below it. */
+  padding: 64px 10px 12px;
   overflow-y: auto;
   scrollbar-width: none;
+}
+
+/* Header row. Same --bar as the rail: the two are one L-shaped frame around the
+   page, and a white header would cut that frame in half at the corner. */
+.vx-head {
+  background: var(--bar);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Logo plate. Rendered in the header row but pulled left across the rail column
+   so it lands in the very corner of the window, the way vcc-platform's does.
+   White in both themes — a colour logo needs a light backing, and the plate is
+   what separates it from the bar colour behind. No border: it sits on the bar,
+   never on a white surface, so a ring would only add noise. */
+.vx-brand-plate {
+  margin-left: -78px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 40px;
+  min-width: 58px;
+  padding: 0 8px;
+  border-radius: 9px;
+  background: #fff;
+  /* Darkened again: the fallback wordmark is dark text on the white plate, and
+     the lightest palette entries would not hold at 13px. */
+  color: color-mix(in srgb, var(--bar) 65%, #0a0d14);
+  transition: box-shadow 0.15s ease;
+}
+
+.vx-brand-plate:hover {
+  box-shadow: var(--shadow-1);
+}
+
+@media (max-width: 720px) {
+  .vx-brand-plate {
+    margin-left: -66px;
+  }
 }
 
 .vx-rail::-webkit-scrollbar {
