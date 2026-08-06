@@ -45,6 +45,13 @@ These bit during the initial build; they are not in most training data.
 
 **Provider abstraction is load-bearing.** API routes and UI never import `@fal-ai/client` or `replicate` directly — everything goes through `RenderProvider` in `src/lib/providers/types.ts`. To add a backend, implement the interface and append to `PROVIDERS` in `providers/index.ts`; nothing else changes.
 
+A provider is really an *engine*, and engines differ in kind, not just vendor:
+
+- `supportsControlNet: false` (Nano Banana) means there is no control map and no adherence dial. The UI hides the ControlNet panel and the diffusion knobs entirely rather than disabling them — showing a slider that silently does nothing is worse than showing none.
+- `promptStyle` decides prompt grammar. `"describe"` composes a scene description for models steered by a control map; `"instruct"` composes an edit instruction, leading with the hard preservation clause, for models that receive the source image directly. Changing engine recomposes the prompt in the new grammar.
+
+Both fal-hosted engines share `FAL_KEY`; credential and upload handling lives in `providers/fal-shared.ts` so they cannot drift apart.
+
 **Model endpoint slugs are env-overridable.** fal rotates them. Defaults live in each adapter's `MODELS` map, overridable via `FAL_MODEL_*` / `REPLICATE_MODEL_*`.
 
 **Rendering is a background job, not a long request.** `POST /api/render` writes the DB row, spawns the job, returns `202 {id}`. The client polls `GET /api/render/[id]`. Live progress sits in a `globalThis` `Map` (`src/lib/jobs.ts`); durable state is SQLite. Don't convert this back to a synchronous request — renders take 20–90s.

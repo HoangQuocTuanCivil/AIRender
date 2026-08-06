@@ -17,12 +17,29 @@ npm run dev
 
 Mở http://localhost:3000
 
-| Provider | Lấy key | Ghi chú |
-|---|---|---|
-| **fal.ai** (khuyến nghị) | https://fal.ai/dashboard/keys | Nhanh nhất, ControlNet tốt nhất. ~$0.04/megapixel |
-| Replicate | https://replicate.com/account/api-tokens | Dự phòng, FLUX Tools của Black Forest Labs |
+Chỉ cần **một** `FAL_KEY` (https://fal.ai/dashboard/keys) — nó chạy được cả hai engine chính.
 
-Chỉ cần **một** trong hai. Ép cứng bằng `RENDER_PROVIDER=fal` hoặc `replicate`.
+### Hai engine, hai cách làm việc khác nhau
+
+| | **FLUX.1 dev + ControlNet** | **Nano Banana Pro (Gemini)** |
+|---|---|---|
+| Cơ chế | Trích depth/edge map từ ảnh gốc rồi **vẽ lại** bám theo map | Nhận thẳng ảnh + **câu lệnh chỉnh sửa**, giữ nguyên phần không được nhắc |
+| Núm vặn độ bám | Có (0–1) | Không — chỉ điều khiển bằng lời |
+| Prompt | Mô tả cảnh | Câu lệnh (app tự đổi văn phong khi bạn đổi engine) |
+| Giá tham khảo | ~$0.025/ảnh | ~$0.04/ảnh |
+
+**Điểm quyết định:** ước lượng chiều sâu đơn ảnh gần như **không ghi nhận được cấu kiện mảnh** — dây văng, dây tiếp xúc đường sắt, lan can, cột tiêu đều quá mỏng. Với cầu dây văng, ControlNet Depth đưa cho AI một cái tháp và một mặt cầu rồi để nó **tự bịa toàn bộ hệ dây**. Model chỉnh sửa thì nhìn thấy dây thật.
+
+| Loại công trình | Engine nên dùng |
+|---|---|
+| Cầu dây văng, cầu treo, đường sắt có catenary | **Nano Banana Pro**, hoặc FLUX + **Canny** |
+| Cao tốc, nút giao, cầu cạn, hầm, đường miền núi | **FLUX + Depth** — khối lớn, cần núm vặn |
+| Bản vẽ mặt đứng CAD | **FLUX + Canny** |
+| Cần giữ tuyệt đối, không cho bịa gì | **Nano Banana Pro** |
+
+Engine thứ ba — **FLUX Tools trên Replicate** — là phương án dự phòng khi fal.ai gặp sự cố, cần `REPLICATE_API_TOKEN` riêng.
+
+Đổi engine ngay trong UI (panel **Công cụ render**), hoặc đặt mặc định bằng `RENDER_PROVIDER=fal | nano-banana | replicate`.
 
 ---
 
@@ -31,10 +48,13 @@ Chỉ cần **một** trong hai. Ép cứng bằng `RENDER_PROVIDER=fal` hoặc 
 ### Luồng cơ bản
 
 1. **Kéo thả ảnh nguồn** — ảnh chụp màn hình model 3D, sketch, hoặc bản vẽ mặt đứng.
-2. Chọn **Loại công trình** → **Bối cảnh** → **Ánh sáng**. Prompt tự ghép lại sau mỗi lần chọn.
-3. Chỉnh **ControlNet** nếu cần — quyết định ảnh có giữ đúng hình học hay không.
-4. Chọn **Độ phân giải**, bấm **Render**. Khoảng 20–60 giây.
-5. Kéo thanh trượt **so sánh trước/sau**, rồi tải ảnh về.
+2. Chọn **Công cụ render** (xem bảng ở trên).
+3. Chọn **Loại công trình** → **Bối cảnh** → **Ánh sáng**. Prompt tự ghép lại sau mỗi lần chọn.
+4. Chỉnh **ControlNet** nếu engine có — quyết định ảnh giữ đúng hình học hay không.
+5. Chọn **Độ phân giải**, bấm **Render**. Khoảng 20–60 giây.
+6. Kéo thanh trượt **so sánh trước/sau**, rồi tải ảnh về.
+
+Mẹo so sánh: render cùng một ảnh qua cả hai engine rồi đặt cạnh nhau trong Thư viện — đó là cách nhanh nhất để biết engine nào hợp loại công trình của bạn.
 
 Mọi lần render tự lưu vào **Thư viện** — ghim yêu thích, xem lại tham số, render lại y hệt.
 
@@ -217,7 +237,9 @@ npm run db:studio      # GUI xem database
 ## Giới hạn đã biết
 
 - **Chưa có MLSD ControlNet.** Cả hai provider chỉ expose Canny và Depth cho FLUX. MLSD (bám đường thẳng — rất hợp mặt đứng cầu và hầm) cần chuyển sang `fal-ai/flux-general` với controlnet tuỳ chọn.
-- **Negative prompt không có tác dụng.** FLUX.1 dev không nhận negative prompt như SDXL. Trường này vẫn lưu vào lịch sử và sẽ dùng được nếu sau này thêm provider SDXL. Vì vậy mọi ràng buộc đều được viết thành **câu khẳng định** trong prompt chính.
+- **Negative prompt không có tác dụng** với cả hai engine hiện có. Trường này vẫn lưu vào lịch sử và sẽ dùng được nếu sau này thêm provider SDXL. Vì vậy mọi ràng buộc đều được viết thành **câu khẳng định** trong prompt chính.
+- **Nano Banana không có núm vặn độ bám.** Muốn chặt hơn thì phải sửa câu lệnh trong ô prompt, không có slider.
+- **Chưa render trực tiếp từ tài khoản Google.** Nano Banana đang chạy qua fal.ai. Muốn gọi thẳng Google thì cần thêm provider dùng Gemini API key (AI Studio) hoặc Vertex AI + OAuth — xem mục Ghi chú kỹ thuật.
 - **Chưa render được tuyến dài liên tục.** Mỗi lần render là một khung hình. Tuyến 5km cần cắt thành nhiều góc rồi ghép thủ công.
 - **Không có xác thực người dùng.** Công cụ chạy local, một người dùng. Đừng expose ra internet nguyên trạng.
 - **Job nền mất khi restart server.** Render đang chạy dở sẽ kẹt ở `running` trong DB; xoá mục đó là xong.
@@ -230,4 +252,14 @@ npm run db:studio      # GUI xem database
 - **Prisma 7** — connection URL ở `prisma.config.ts` (không còn trong `schema.prisma`), client dùng driver adapter `better-sqlite3`, và Prisma 7 không tự nạp `.env` nên config gọi `process.loadEnvFile()` thủ công.
 - **React 19 lint** coi `setState` đồng bộ trong effect là *error*. Theme đọc bằng `useSyncExternalStore` (theme sống trên `<html>` — external store thật sự), state con reset bằng `key` chứ không bằng effect.
 - Font **Inter** kèm subset `vietnamese`. `vcc-platform` khai báo Inter trong mọi font stack nhưng chỉ load Manrope, nên chrome của nó thực tế rơi về Segoe UI — ở đây Inter được load thật.
-- Kích thước ảnh đọc ở **phía client** để server không cần thư viện giải mã ảnh; server chỉ snap về bội số 32 và giới hạn theo mức độ phân giải đã chọn.
+- Kích thước ảnh đọc ở **phía client** để server không cần thư viện giải mã ảnh; server chỉ snap về bội số 32 và giới hạn theo mức độ phân giải đã chọn. Nano Banana nhận *bucket* độ phân giải (1K/2K/4K) chứ không nhận số pixel, nên `maxSide` được quy đổi sang bucket.
+
+### Ba cách truy cập Nano Banana
+
+| Cách | Xác thực | Đánh giá |
+|---|---|---|
+| **fal.ai** (đang dùng) | `FAL_KEY` | Một key cho mọi model. fal cộng thêm biên lợi nhuận. |
+| **Google AI Studio** | `GEMINI_API_KEY` — đăng nhập Google để **lấy** key | Rẻ hơn, có bậc miễn phí. Vẫn là API key, không phải OAuth. |
+| **Vertex AI** (Google Cloud) | OAuth / service account (`gcloud auth`) | Đây mới thật sự là "đăng nhập bằng tài khoản Google". Cần project GCP + bật billing. Chỉ đáng khi đã ở sẵn trên GCP hoặc cần kiểm soát cấp doanh nghiệp. |
+
+App Gemini cho người dùng cuối (gemini.google.com) **không có API** — không thể dựng tích hợp lên nó.

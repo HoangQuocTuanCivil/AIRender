@@ -1,11 +1,16 @@
 import { falProvider } from "./fal";
+import { nanoBananaProvider } from "./nano-banana";
 import { replicateProvider } from "./replicate";
 import { ProviderError, type RenderProvider } from "./types";
 
 export * from "./types";
 
 /** Registration order doubles as preference order when auto-selecting. */
-const PROVIDERS: RenderProvider[] = [falProvider, replicateProvider];
+const PROVIDERS: RenderProvider[] = [
+  falProvider,
+  nanoBananaProvider,
+  replicateProvider,
+];
 
 export function listProviders(): RenderProvider[] {
   return PROVIDERS;
@@ -57,7 +62,10 @@ export function describeProviders() {
   return PROVIDERS.map((p) => ({
     id: p.id,
     label: p.label,
+    blurb: p.blurb,
     configured: p.isConfigured(),
+    supportsControlNet: p.supportsControlNet,
+    promptStyle: p.promptStyle,
     apiKeyEnv: p.apiKeyEnv,
     apiKeyUrl: p.apiKeyUrl,
   }));

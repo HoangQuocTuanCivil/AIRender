@@ -827,27 +827,75 @@ export function getLighting(id: string | null | undefined) {
   return LIGHTING_MODIFIERS.find((l) => l.id === id);
 }
 
+export type PromptStyle = "describe" | "instruct";
+
 /**
  * Order matters. FLUX weights earlier tokens more heavily, so the structure and
  * its accuracy constraints come first, then where it sits, then how it is lit,
  * then the camera.
  */
+function composeDescribePrompt(
+  subject: SubjectPreset,
+  contextId: string,
+  lightingId: string,
+): string {
+  const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
+
+  return [
+    subject.prompt,
+    subject.accuracy,
+    getContext(contextId)?.prompt,
+    getLighting(lightingId)?.prompt,
+    tail,
+  ]
+    .map((part) => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(", ");
+}
+
+/**
+ * Edit models (Nano Banana, FLUX Kontext) receive the source image itself
+ * rather than a control map, and respond to instructions, not scene
+ * descriptions. Same domain knowledge, different grammar — and a hard
+ * preservation clause up front, since these models have no adherence dial.
+ */
+function composeInstructPrompt(
+  subject: SubjectPreset,
+  contextId: string,
+  lightingId: string,
+): string {
+  const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
+  const context = getContext(contextId)?.prompt;
+  const lighting = getLighting(lightingId)?.prompt;
+
+  const lines = [
+    "Turn this engineering source image into a photorealistic photograph.",
+    "",
+    "Keep the existing geometry, proportions, camera angle and composition exactly as they are. Do not add, remove, relocate or reshape any structural element, and do not change the number of any repeated element.",
+    "",
+    `Subject: ${subject.prompt}.`,
+    `Preserve precisely: ${subject.accuracy}.`,
+  ];
+
+  if (context) lines.push(`Environment: ${context}.`);
+  if (lighting) lines.push(`Lighting: ${lighting}.`);
+  lines.push(`Look: ${tail}.`);
+
+  return lines.join("\n");
+}
+
 export function composePrompt(
   subjectId: string,
   contextId: string,
   lightingId: string,
+  style: PromptStyle = "describe",
 ): string {
   const subject = getSubject(subjectId);
   if (!subject) return "";
 
-  const context = getContext(contextId);
-  const lighting = getLighting(lightingId);
-  const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
-
-  return [subject.prompt, subject.accuracy, context?.prompt, lighting?.prompt, tail]
-    .map((part) => part?.trim())
-    .filter((part): part is string => Boolean(part))
-    .join(", ");
+  return style === "instruct"
+    ? composeInstructPrompt(subject, contextId, lightingId)
+    : composeDescribePrompt(subject, contextId, lightingId);
 }
 
 export function defaultNegativePrompt(): string {

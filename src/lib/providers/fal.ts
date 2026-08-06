@@ -1,4 +1,9 @@
-import { fal } from "@fal-ai/client";
+import {
+  fal,
+  ensureFalCredentials,
+  falErrorMessage,
+  uploadToFal,
+} from "./fal-shared";
 import {
   ProviderError,
   type ControlMode,
@@ -27,22 +32,6 @@ const MODELS: Record<ControlMode, string> = {
   none: process.env.FAL_MODEL_IMG2IMG ?? "fal-ai/flux/dev/image-to-image",
 };
 
-let credentialsConfigured = false;
-
-function ensureCredentials() {
-  const key = process.env.FAL_KEY;
-  if (!key) {
-    throw new ProviderError(
-      "Chưa có FAL_KEY. Thêm vào file .env.local rồi khởi động lại dev server.",
-      "fal",
-    );
-  }
-  if (!credentialsConfigured) {
-    fal.config({ credentials: key });
-    credentialsConfigured = true;
-  }
-}
-
 /**
  * Scale to the requested longest side, preserving aspect ratio, snapped to a
  * multiple of 32 (the latent grid). Only ever scales down — upscaling a small
@@ -70,7 +59,10 @@ interface FalOutput {
 
 export const falProvider: RenderProvider = {
   id: "fal",
-  label: "fal.ai (FLUX.1 dev)",
+  label: "FLUX.1 dev + ControlNet",
+  blurb: "Có núm vặn độ bám hình khối. Tốt cho khối lớn: đường, hầm, cầu cạn.",
+  supportsControlNet: true,
+  promptStyle: "describe",
   apiKeyUrl: "https://fal.ai/dashboard/keys",
   apiKeyEnv: "FAL_KEY",
 
@@ -82,35 +74,16 @@ export const falProvider: RenderProvider = {
     return MODELS[mode];
   },
 
-  /**
-   * Upload to fal's CDN rather than inlining base64: a 4K facade screenshot is
-   * ~8 MB, and the same URL gets reused for both `image_url` and
-   * `control_lora_image_url` instead of being sent twice.
-   */
+  /** The same uploaded URL feeds both `image_url` and `control_lora_image_url`. */
   async prepareImage(buffer: Buffer, mime: string): Promise<string> {
-    ensureCredentials();
-    try {
-      const ext = mime.split("/")[1] ?? "png";
-      const file = new File([new Uint8Array(buffer)], `source.${ext}`, {
-        type: mime,
-      });
-      return await fal.storage.upload(file);
-    } catch (error) {
-      throw new ProviderError(
-        `Không upload được ảnh lên fal.ai: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        "fal",
-        error,
-      );
-    }
+    return uploadToFal(buffer, mime, "fal");
   },
 
   async render(
     params: RenderParams,
     onProgress?: ProgressHandler,
   ): Promise<RenderOutcome> {
-    ensureCredentials();
+    ensureFalCredentials("fal");
 
     const model = MODELS[params.controlMode];
     const size = normaliseSize(
@@ -182,35 +155,3 @@ export const falProvider: RenderProvider = {
     }
   },
 };
-
-/** fal validation errors nest the useful part; surface it instead of "[object Object]". */
-function falErrorMessage(error: unknown, model: string): string {
-  const body = (error as { body?: unknown })?.body;
-  const detail = (body as { detail?: unknown })?.detail;
-
-  if (Array.isArray(detail)) {
-    const parts = detail
-      .map((d: { loc?: unknown[]; msg?: string }) =>
-        [d.loc?.join("."), d.msg].filter(Boolean).join(": "),
-      )
-      .filter(Boolean);
-    if (parts.length) return `fal.ai từ chối request (${model}): ${parts.join("; ")}`;
-  }
-  if (typeof detail === "string") {
-    return `fal.ai từ chối request (${model}): ${detail}`;
-  }
-
-  const status = (error as { status?: number })?.status;
-  if (status === 401 || status === 403) {
-    return "FAL_KEY không hợp lệ hoặc hết hạn. Kiểm tra lại key ở fal.ai/dashboard/keys.";
-  }
-  if (status === 402) {
-    return "Tài khoản fal.ai hết credit. Nạp thêm ở fal.ai/dashboard/billing.";
-  }
-  if (status === 404) {
-    return `Không tìm thấy model "${model}". Slug có thể đã đổi — set lại qua biến môi trường FAL_MODEL_*.`;
-  }
-
-  const message = error instanceof Error ? error.message : String(error);
-  return `Lỗi từ fal.ai (${model}): ${message}`;
-}

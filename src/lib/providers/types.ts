@@ -84,6 +84,20 @@ export type ProgressHandler = (event: ProgressEvent) => void;
 export interface RenderProvider {
   id: string;
   label: string;
+  /** One line shown under the engine name in the picker. */
+  blurb: string;
+  /**
+   * False for instruction-driven edit models (Nano Banana, FLUX Kontext), which
+   * have no control map and therefore no adherence dial. The UI hides the
+   * ControlNet panel rather than showing controls that do nothing.
+   */
+  supportsControlNet: boolean;
+  /**
+   * "describe" — a scene description, for text-to-image models steered by a
+   * control map. "instruct" — an edit instruction, for models that receive the
+   * source image directly.
+   */
+  promptStyle: "describe" | "instruct";
   /** Docs URL for obtaining an API key — surfaced in the UI when unconfigured. */
   apiKeyUrl: string;
   /** Name of the env var holding the credential. */

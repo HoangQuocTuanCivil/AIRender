@@ -52,21 +52,38 @@ for (const s of SUBJECT_PRESETS) {
     fail(`${s.id}: guidanceScale outside API range 1..20`);
 }
 
-let min = Infinity;
-let max = 0;
-for (const s of SUBJECT_PRESETS) {
-  for (const c of CONTEXT_MODIFIERS) {
-    for (const l of LIGHTING_MODIFIERS) {
-      const p = composePrompt(s.id, c.id, l.id);
-      if (!p) fail(`empty prompt for ${s.id}/${c.id}/${l.id}`);
-      if (p.length > 4000)
-        fail(`prompt over the 4000-char API cap: ${s.id}/${c.id}/${l.id}`);
-      min = Math.min(min, p.length);
-      max = Math.max(max, p.length);
+// Both grammars are exercised: "describe" drives FLUX ControlNet, "instruct"
+// drives edit models like Nano Banana.
+for (const style of ["describe", "instruct"] as const) {
+  let min = Infinity;
+  let max = 0;
+  for (const s of SUBJECT_PRESETS) {
+    for (const c of CONTEXT_MODIFIERS) {
+      for (const l of LIGHTING_MODIFIERS) {
+        const p = composePrompt(s.id, c.id, l.id, style);
+        if (!p) fail(`empty ${style} prompt for ${s.id}/${c.id}/${l.id}`);
+        if (p.length > 4000)
+          fail(`${style} prompt over the 4000-char API cap: ${s.id}/${c.id}/${l.id}`);
+        min = Math.min(min, p.length);
+        max = Math.max(max, p.length);
+      }
     }
   }
+  console.log(`Prompt len (${style}): ${min}..${max} chars (API cap 4000)`);
 }
-console.log(`Prompt len: ${min}..${max} chars (API cap 4000)`);
+
+// The edit grammar must lead with the preservation clause — it is the only
+// structural control an edit model has.
+const instruct = composePrompt(
+  "bridge-cable-stayed",
+  "karst-northeast",
+  "golden-hour",
+  "instruct",
+);
+if (!/^Turn this engineering source image/.test(instruct))
+  fail("instruct prompt must open with the conversion instruction");
+if (!instruct.includes("Do not add, remove, relocate or reshape"))
+  fail("instruct prompt must carry the hard preservation clause");
 
 if (composePrompt("nope", "none", "daylight") !== "")
   fail("unknown subject should compose to an empty string, not throw");

@@ -16,13 +16,27 @@ import {
   composePrompt,
   defaultNegativePrompt,
   getSubject,
+  type PromptStyle,
   type SubjectGroup,
 } from "@/lib/presets";
 import { CONTROL_MODES, type ControlMode } from "@/lib/providers/types";
 import { Badge, Button, Field, Panel, Slider, Textarea } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
+export interface ProviderInfo {
+  id: string;
+  label: string;
+  blurb: string;
+  configured: boolean;
+  supportsControlNet: boolean;
+  promptStyle: PromptStyle;
+  apiKeyEnv: string;
+  apiKeyUrl: string;
+}
+
 export interface RenderSettings {
+  /** Which engine renders the job — decides ControlNet availability and prompt style. */
+  providerId: string;
   subjectId: string;
   contextId: string;
   lightingId: string;
@@ -41,14 +55,22 @@ export interface RenderSettings {
   outputFormat: "jpeg" | "png";
 }
 
+export const DEFAULT_PROVIDER_ID = "fal";
+
 function buildDefaults(): RenderSettings {
   const subject = getSubject(DEFAULT_SUBJECT_ID)!;
   return {
+    providerId: DEFAULT_PROVIDER_ID,
     subjectId: subject.id,
     contextId: DEFAULT_CONTEXT_ID,
     lightingId: DEFAULT_LIGHTING_ID,
     presetId: subject.id,
-    prompt: composePrompt(subject.id, DEFAULT_CONTEXT_ID, DEFAULT_LIGHTING_ID),
+    prompt: composePrompt(
+      subject.id,
+      DEFAULT_CONTEXT_ID,
+      DEFAULT_LIGHTING_ID,
+      "describe",
+    ),
     negativePrompt: defaultNegativePrompt(),
     controlMode: subject.defaults.controlMode,
     controlStrength: subject.defaults.controlStrength,
@@ -67,10 +89,12 @@ export const DEFAULT_SETTINGS: RenderSettings = buildDefaults();
 export function ControlPanel({
   settings,
   onChange,
+  providers,
   disabled,
 }: {
   settings: RenderSettings;
   onChange: (settings: RenderSettings) => void;
+  providers: ProviderInfo[];
   disabled?: boolean;
 }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -87,22 +111,30 @@ export function ControlPanel({
    * is why the box is marked "Tuỳ chỉnh" once touched.
    */
   const recompose = (next: {
+    providerId?: string;
     subjectId?: string;
     contextId?: string;
     lightingId?: string;
   }) => {
+    const providerId = next.providerId ?? settings.providerId;
     const subjectId = next.subjectId ?? settings.subjectId;
     const contextId = next.contextId ?? settings.contextId;
     const lightingId = next.lightingId ?? settings.lightingId;
     const subject = getSubject(subjectId);
 
+    // Switching engine also switches prompt grammar: FLUX wants a scene
+    // description, Nano Banana wants an edit instruction.
+    const style =
+      providers.find((p) => p.id === providerId)?.promptStyle ?? "describe";
+
     onChange({
       ...settings,
+      providerId,
       subjectId,
       contextId,
       lightingId,
       presetId: subjectId,
-      prompt: composePrompt(subjectId, contextId, lightingId),
+      prompt: composePrompt(subjectId, contextId, lightingId, style),
       // Switching subject also adopts that structure type's tuning: a
       // cable-stayed bridge needs a much tighter grip than an urban street.
       ...(next.subjectId && subject
@@ -120,9 +152,47 @@ export function ControlPanel({
   const subject = getSubject(settings.subjectId);
   const isCustom = settings.presetId === CUSTOM_PRESET_ID;
   const groupSubjects = SUBJECT_PRESETS.filter((p) => p.group === activeGroup);
+  const engine = providers.find((p) => p.id === settings.providerId);
+  const usesControlNet = engine?.supportsControlNet ?? true;
 
   return (
     <div className="space-y-3">
+      {providers.length > 0 ? (
+        <Panel title="Công cụ render">
+          <div className="space-y-1.5">
+            {providers.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                disabled={disabled || !item.configured}
+                onClick={() => recompose({ providerId: item.id })}
+                title={
+                  item.configured
+                    ? item.blurb
+                    : `Cần ${item.apiKeyEnv} trong .env.local`
+                }
+                className={cn(
+                  "w-full rounded-md border px-3 py-2 text-left transition-colors",
+                  "disabled:pointer-events-none disabled:opacity-45",
+                  settings.providerId === item.id
+                    ? "border-action bg-module-soft"
+                    : "border-border bg-surface-2 hover:bg-hover",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-[12px] font-medium">{item.label}</span>
+                  {!item.configured ? (
+                    <Badge tone="danger">thiếu key</Badge>
+                  ) : null}
+                </span>
+                <span className="mt-0.5 block text-[10px] leading-relaxed text-ink-500">
+                  {item.blurb}
+                </span>
+              </button>
+            ))}
+          </div>
+        </Panel>
+      ) : null}
       <Panel title="Loại công trình">
         <div className="flex flex-wrap gap-1">
           {SUBJECT_GROUPS.map((group) => (
@@ -265,7 +335,7 @@ export function ControlPanel({
 
         <Field
           label="Loại trừ (negative prompt)"
-          hint="FLUX.1 dev bỏ qua trường này — chỉ lưu vào lịch sử. Muốn loại bỏ thứ gì thì diễn đạt thành câu khẳng định trong prompt chính."
+          hint="Không engine nào hiện có dùng trường này — chỉ lưu vào lịch sử. Muốn loại bỏ thứ gì thì diễn đạt thành câu khẳng định trong prompt chính."
         >
           <Textarea
             rows={2}
@@ -276,56 +346,53 @@ export function ControlPanel({
         </Field>
       </Panel>
 
-      <Panel title="ControlNet — bám hình khối gốc">
-        <div className="space-y-1.5">
-          {CONTROL_MODES.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => patch({ controlMode: mode.id })}
-              className={cn(
-                "w-full rounded-md border px-3 py-2 text-left transition-colors",
-                "disabled:pointer-events-none disabled:opacity-50",
-                settings.controlMode === mode.id
-                  ? "border-action bg-module-soft"
-                  : "border-border bg-surface-2 hover:bg-hover",
-              )}
-            >
-              <p className="text-[12px] font-medium">{mode.label}</p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-ink-500">
-                {mode.hint}
-              </p>
-            </button>
-          ))}
-        </div>
+      {/* Edit models have no control map, so there is no adherence dial to
+          show — hiding the panel is honest; disabling it would suggest the
+          settings still apply. */}
+      {usesControlNet ? (
+        <Panel title="ControlNet — bám hình khối gốc">
+          <div className="space-y-1">
+            {CONTROL_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                disabled={disabled}
+                onClick={() => patch({ controlMode: mode.id })}
+                title={mode.hint}
+                className={cn(
+                  "w-full rounded-md border px-3 py-2 text-left text-[12px] font-medium transition-colors",
+                  "disabled:pointer-events-none disabled:opacity-50",
+                  settings.controlMode === mode.id
+                    ? "border-action bg-module-soft"
+                    : "border-border bg-surface-2 hover:bg-hover",
+                )}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
 
-        <Slider
-          label="Độ bám hình khối"
-          value={settings.controlStrength}
-          onChange={(controlStrength) => patch({ controlStrength })}
-          min={0}
-          max={1}
-          step={0.01}
-          disabled={disabled || settings.controlMode === "none"}
-          hint={
-            settings.controlMode === "none"
-              ? "Không áp dụng khi tắt ControlNet."
-              : "Cầu và hầm nên để 0.92–0.97 (sai hình học là bị bắt lỗi ngay). Đường và cảnh quan 0.85–0.9 là đủ."
-          }
-        />
+          <Slider
+            label="Độ bám hình khối"
+            value={settings.controlStrength}
+            onChange={(controlStrength) => patch({ controlStrength })}
+            min={0}
+            max={1}
+            step={0.01}
+            disabled={disabled || settings.controlMode === "none"}
+          />
 
-        <Slider
-          label="Mức biến đổi ảnh gốc"
-          value={settings.strength}
-          onChange={(strength) => patch({ strength })}
-          min={0}
-          max={1}
-          step={0.01}
-          disabled={disabled}
-          hint="Ảnh 3D chưa gán vật liệu hoặc bản vẽ CAD: để 0.92–0.95. Ảnh đã có vật liệu đúng: hạ xuống 0.6–0.8."
-        />
-      </Panel>
+          <Slider
+            label="Mức biến đổi ảnh gốc"
+            value={settings.strength}
+            onChange={(strength) => patch({ strength })}
+            min={0}
+            max={1}
+            step={0.01}
+            disabled={disabled}
+          />
+        </Panel>
+      ) : null}
 
       <Panel title="Độ phân giải">
         <div className="flex gap-1.5">
@@ -369,6 +436,10 @@ export function ControlPanel({
       >
         {advancedOpen ? (
           <div className="space-y-3.5">
+            {/* Diffusion knobs — meaningless to an edit model, which exposes no
+                step count or guidance scale. */}
+            {usesControlNet ? (
+              <>
             <Slider
               label="Số bước (steps)"
               value={settings.steps}
@@ -392,6 +463,8 @@ export function ControlPanel({
               disabled={disabled}
               hint="FLUX hoạt động tốt nhất quanh 3.5. Cao quá sẽ gây cháy sáng, bệt màu."
             />
+              </>
+            ) : null}
 
             <Slider
               label="Số ảnh mỗi lần render"

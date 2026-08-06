@@ -10,18 +10,11 @@ import { ImageDropzone, type SourceImage } from "@/components/image-dropzone";
 import {
   ControlPanel,
   DEFAULT_SETTINGS,
+  type ProviderInfo,
   type RenderSettings,
 } from "@/components/control-panel";
 import { RenderResult } from "@/components/render-result";
 import { Button, Panel } from "@/components/ui";
-
-interface ProviderInfo {
-  id: string;
-  label: string;
-  configured: boolean;
-  apiKeyEnv: string;
-  apiKeyUrl: string;
-}
 
 const POLL_INTERVAL_MS = 1200;
 
@@ -40,7 +33,19 @@ export function StudioClient() {
   useEffect(() => {
     fetch("/api/providers")
       .then((r) => r.json())
-      .then((d) => setProviders(d.providers))
+      .then((d: { providers: ProviderInfo[] }) => {
+        setProviders(d.providers);
+        // Default to the first engine that actually has credentials, so the
+        // Render button is not blocked by a preselected unconfigured engine.
+        const first = d.providers.find((p) => p.configured);
+        if (first) {
+          setSettings((prev) =>
+            prev.providerId === first.id
+              ? prev
+              : { ...prev, providerId: first.id },
+          );
+        }
+      })
       .catch(() => setProviders([]));
   }, []);
 
@@ -104,6 +109,7 @@ export function StudioClient() {
           name: "Ảnh từ thư viện",
         });
         setSettings({
+          providerId: data.provider || DEFAULT_SETTINGS.providerId,
           subjectId: data.presetId ?? DEFAULT_SETTINGS.subjectId,
           contextId: data.contextId ?? DEFAULT_SETTINGS.contextId,
           lightingId: data.lightingId ?? DEFAULT_SETTINGS.lightingId,
@@ -166,6 +172,7 @@ export function StudioClient() {
           seed: settings.seed ?? undefined,
           maxSide: getResolution(settings.resolutionId).maxSide,
           outputFormat: settings.outputFormat,
+          providerId: settings.providerId,
         }),
       });
 
@@ -199,7 +206,12 @@ export function StudioClient() {
           <ImageDropzone value={source} onChange={setSource} disabled={busy} />
         </Panel>
 
-        <ControlPanel settings={settings} onChange={setSettings} disabled={busy} />
+        <ControlPanel
+          settings={settings}
+          onChange={setSettings}
+          providers={providers ?? []}
+          disabled={busy}
+        />
 
         <div className="sticky bottom-0 -mx-3 mt-3 border-t border-border bg-page/95 p-3 backdrop-blur">
           <Button

@@ -22,7 +22,10 @@ const MODELS: Record<ControlMode, string> = {
 
 export const replicateProvider: RenderProvider = {
   id: "replicate",
-  label: "Replicate (FLUX Tools)",
+  label: "FLUX Tools (Replicate)",
+  blurb: "Phương án dự phòng khi fal.ai gặp sự cố. Cùng dòng FLUX ControlNet.",
+  supportsControlNet: true,
+  promptStyle: "describe",
   apiKeyUrl: "https://replicate.com/account/api-tokens",
   apiKeyEnv: "REPLICATE_API_TOKEN",
 
