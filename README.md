@@ -12,10 +12,12 @@ Giao diện theo hệ thiết kế của `vcc-platform` (SGMT Enterprise Brand G
 npm install
 cp .env.example .env.local     # mở .env.local, điền FAL_KEY
 npm run db:push
-npm run dev
+npm run app
 ```
 
 Mở http://localhost:3000
+
+> `npm run app` chạy bản **production**. Dùng nó để làm việc hằng ngày: nhanh hơn và console sạch. `npm run dev` chỉ cần khi đang sửa code — chế độ dev in ra cảnh báo hydration mismatch mỗi lần tải trang nếu bạn có extension bảo mật/chặn quảng cáo chèn thuộc tính vào DOM (`bis_skin_checked`, `__processed_*`). Đó là chẩn đoán của React dành cho lập trình viên, không phải lỗi của app, và không xuất hiện ở bản production.
 
 Chỉ cần **một** `FAL_KEY` (https://fal.ai/dashboard/keys) — nó chạy được cả hai engine chính.
 
@@ -233,8 +235,10 @@ Xoá một mục trong Thư viện sẽ xoá ảnh render nhưng **giữ ảnh n
 ## Lệnh
 
 ```bash
-npm run dev            # dev server
+npm run app            # DÙNG APP — build rồi chạy bản production (khuyến nghị)
+npm run dev            # dev server — chỉ cần khi đang sửa code
 npm run build          # prisma generate + next build
+npm start              # chạy bản đã build sẵn
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint
 npm run check:presets  # kiểm tra thư viện prompt (1288 tổ hợp)
@@ -250,7 +254,10 @@ npm run db:studio      # GUI xem database
 
 | Triệu chứng | Xử lý |
 |---|---|
-| Banner đỏ "Chưa cấu hình API key" | Chưa có `.env.local`, hoặc chưa restart dev server. Next chỉ đọc env lúc khởi động. |
+| Banner đỏ "Chưa cấu hình API key" | Chưa có `.env.local`, hoặc chưa khởi động lại server. Next chỉ đọc env lúc khởi động. |
+| Console báo `hydration mismatch`, thấy `bis_skin_checked` / `__processed_*` | Extension trình duyệt chèn thuộc tính vào DOM trước khi React chạy. Không phải lỗi app — chạy `npm run app` (bản production) là hết, hoặc tắt extension đó cho `localhost`. |
+| `403 User is locked. Exhausted balance` | Hết credit fal.ai — nạp ở https://fal.ai/dashboard/billing |
+| Render qua FLUX chờ vài phút | Endpoint control-LoRA của fal khởi động nguội chậm. Nano Banana nhanh hơn nhiều (~30s). |
 | `Không tìm thấy model "…"` | fal.ai đổi slug. Set `FAL_MODEL_CANNY` / `FAL_MODEL_DEPTH` / `FAL_MODEL_IMG2IMG`. |
 | Ảnh còn nét chì / vẫn xám | **Mức biến đổi** quá thấp → kéo lên `0.95`. |
 | Cầu sai số nhịp, sai số cáp | Tăng **Độ bám hình khối** lên `0.95+`; kiểm tra đang dùng Depth cho model 3D, Canny cho bản vẽ. |
