@@ -114,6 +114,23 @@ export function Slider({
   );
 }
 
+export function Input({
+  className,
+  ...props
+}: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={cn(
+        "h-10 w-full rounded-[var(--radius-control)] border border-border bg-surface px-3",
+        "text-[13px] text-ink-950 placeholder:text-ink-400",
+        "focus:border-action focus:outline-none focus:ring-3 focus:ring-brand-500/18",
+        className,
+      )}
+    />
+  );
+}
+
 export function Textarea({
   className,
   ...props

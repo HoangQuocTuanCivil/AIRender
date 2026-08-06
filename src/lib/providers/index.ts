@@ -52,7 +52,7 @@ export function resolveProvider(preferredId?: string): RenderProvider {
   const configured = PROVIDERS.find((p) => p.isConfigured());
   if (!configured) {
     throw new ProviderError(
-      "Chưa cấu hình provider nào. Thêm FAL_KEY (hoặc REPLICATE_API_TOKEN) vào .env.local rồi khởi động lại dev server.",
+      "Chưa cấu hình provider nào. Thêm API key ở mục Cài đặt (FAL_KEY, GEMINI_API_KEY hoặc REPLICATE_API_TOKEN).",
       "none",
     );
   }

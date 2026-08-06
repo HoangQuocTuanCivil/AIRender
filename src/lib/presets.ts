@@ -718,6 +718,20 @@ export const CONTEXT_MODIFIERS: ContextModifier[] = [
       "distance, bright tropical maritime light and salt haze",
   },
   {
+    id: "urban-central-danang",
+    name: "Đô thị miền Trung (Đà Nẵng)",
+    description:
+      "Đà Nẵng, Huế, Quy Nhơn — đô thị ven biển quy hoạch bài bản: đường rộng, dải phân cách trồng cây, núi xanh làm nền.",
+    prompt:
+      "set in Da Nang, a modern planned coastal city in central Vietnam, unusually wide and orderly " +
+      "boulevards with broad landscaped central medians, coconut palms and flame trees lining the " +
+      "roadside, clean wide paved sidewalks with granite kerbs, mid-rise contemporary buildings and " +
+      "white resort towers rather than dense narrow tube houses, the Han River and its landmark " +
+      "bridges in the middle distance, the forested Son Tra peninsula headland and the blue Truong " +
+      "Son mountains rising behind the city, bright humid coastal light with sea haze softening the " +
+      "far distance, traffic noticeably lighter and more orderly than Hanoi or Ho Chi Minh City",
+  },
+  {
     id: "midland-hills",
     name: "Trung du",
     description: "Phú Thọ, Thái Nguyên, Bắc Giang — đồi thấp, chè, keo.",

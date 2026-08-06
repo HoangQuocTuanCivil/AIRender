@@ -3,6 +3,7 @@ import type { Render } from "@/generated/prisma";
 import { prisma } from "./db";
 import { getSubject } from "./presets";
 import { resolveProvider, ProviderError, type ControlMode } from "./providers";
+import { loadSettings } from "./settings";
 import {
   RENDERS_DIR,
   contentTypeForPath,
@@ -67,10 +68,15 @@ export function getLiveJob(id: string): LiveJob | undefined {
  * costs us progress reporting and trips proxy timeouts.
  */
 export async function startRender(input: RenderRequestInput): Promise<string> {
+  // Providers read credentials synchronously, so the stored keys have to be in
+  // memory before one is resolved — and before the job runs, since it renders
+  // long after this request has returned.
+  await loadSettings();
+
   const provider = resolveProvider(input.providerId);
   if (!provider.isConfigured()) {
     throw new ProviderError(
-      `Provider "${provider.label}" chưa có API key. Thêm ${provider.apiKeyEnv} vào .env.local.`,
+      `Provider "${provider.label}" chưa có API key. Thêm ${provider.apiKeyEnv} ở mục Cài đặt.`,
       provider.id,
     );
   }

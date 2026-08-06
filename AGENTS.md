@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# AIRender
+# A2ZRender
 
 AI rendering for **linear infrastructure** — roads, railways, bridges, tunnels. Source image (3D model screenshot / sketch / CAD elevation) → photoreal render with the geometry preserved via ControlNet.
 
@@ -41,7 +41,7 @@ These bit during the initial build; they are not in most training data.
 
 **Seeds are text, not integers.** fal returns seeds far past `Number.MAX_SAFE_INTEGER` (observed 16230947957082601000). Stored as `Int`, reading the row back throws `P2023` before Prisma even sees it — and `node:sqlite` throws too, so the row becomes unreadable by any route. The column is `String?`; `isReusableSeed` in `utils.ts` gates whether one can be fed back in, since anything past the safe range came back approximate and would render something other than what it labels.
 
-**Client/server boundary.** `jobs.ts` imports Prisma, so client components may only `import type` from it. Importing a *value* (even a pure helper) drags `better-sqlite3` into the browser bundle and the build fails with `Can't resolve 'fs'`. Shared runtime helpers belong in `utils.ts`.
+**Client/server boundary.** `jobs.ts` and `settings.ts` import Prisma, so client components may only `import type` from them (or from a route module that imports them, as `settings-client.tsx` does). Importing a *value* (even a pure helper) drags `better-sqlite3` into the browser bundle and the build fails with `Can't resolve 'fs'`. Shared runtime helpers belong in `utils.ts`.
 
 **Custom properties resolve where they are declared.** `--module-soft` is derived from `--module` on `.vx-shell` itself, not on `:root`, because a `var()` inside a custom property is substituted against the element carrying the declaration. Setting `--module-soft` inline alongside `--module` is what broke dark mode once — the inline light tint outranked the dark override and produced white-on-white.
 
@@ -58,7 +58,13 @@ Both fal-hosted engines share `FAL_KEY`; credential and upload handling lives in
 
 **Model endpoint slugs are env-overridable.** fal rotates them. Defaults live in each adapter's `MODELS` map, overridable via `FAL_MODEL_*` / `REPLICATE_MODEL_*`.
 
+**Credentials come from `secret()`, not `process.env`.** Keys are editable in the Cài đặt screen and stored in the `Setting` table, so a provider that reads `process.env.FAL_KEY` directly would ignore whatever the user just typed. `secret(name)` in `settings.ts` returns the stored value, falling back to the environment variable of the same name — stored wins, and the screen labels which source is live.
+
+It reads a synchronous in-memory cache because `isConfigured()` is synchronous, so **any route that resolves a provider must `await loadSettings()` first**. `startRender` does it for the whole render path, `/api/providers` and `/api/settings` for theirs. Model slugs stay on `process.env`: they are a deployment detail, not something the UI edits.
+
 **Rendering is a background job, not a long request.** `POST /api/render` writes the DB row, spawns the job, returns `202 {id}`. The client polls `GET /api/render/[id]`. Live progress sits in a `globalThis` `Map` (`src/lib/jobs.ts`); durable state is SQLite. Don't convert this back to a synchronous request — renders take 20–90s.
+
+**The rail icon is server-rendered from a setting.** The root layout reads it and passes it to `AppShell`, and calls `connection()` first — without that, the synchronous SQLite read completes during prerendering and every visitor gets whatever icon existed at build time. The Cài đặt screen calls `router.refresh()` after an upload for the same reason: the rail is not its own state.
 
 **Images never go in `public/`.** They live under `storage/` and are served by `/api/files/[...path]`, which rejects any path escaping the storage root. Keep that guard.
 
@@ -66,7 +72,7 @@ Both fal-hosted engines share `FAL_KEY`; credential and upload handling lives in
 
 ## Prompt library
 
-`presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 8 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.
+`presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 9 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.
 
 Every subject carries an `accuracy` clause naming the details that structure type gets wrong (cable spacing, span equality, catenary mast pitch, lane-count continuity). These are **positive** constraints because FLUX.1 dev ignores negative prompts — never move a constraint into `negativePrompt` and consider it handled.
 
@@ -95,6 +101,9 @@ All user-facing strings are **Vietnamese**. Code, comments, identifiers, and com
 | A provider's request shape | `src/lib/providers/{fal,replicate}.ts` |
 | Job lifecycle, progress messages | `src/lib/jobs.ts` |
 | Rail, header, theme toggle | `src/components/app-shell.tsx` |
+| Product name, default badge | `src/lib/brand.ts` |
+| API keys & icon: storage, precedence | `src/lib/settings.ts` |
+| Cài đặt screen | `src/components/settings-client.tsx` |
 | Studio layout & render submit | `src/components/studio-client.tsx` |
 | Axis pickers / ControlNet / resolution | `src/components/control-panel.tsx` |
 | Library grid & preview modal | `src/components/history-client.tsx` |

@@ -25,6 +25,8 @@ export function storageRoot(): string {
 
 export const UPLOADS_DIR = "uploads";
 export const RENDERS_DIR = "renders";
+/** App icon set in Cài đặt; served through the same guarded file route. */
+export const BRANDING_DIR = "branding";
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",

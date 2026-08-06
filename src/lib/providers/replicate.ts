@@ -47,10 +47,10 @@ export const replicateProvider: RenderProvider = {
     params: RenderParams,
     onProgress?: ProgressHandler,
   ): Promise<RenderOutcome> {
-    const token = process.env.REPLICATE_API_TOKEN;
+    const token = secret("REPLICATE_API_TOKEN");
     if (!token) {
       throw new ProviderError(
-        "Chưa có REPLICATE_API_TOKEN. Thêm vào .env.local rồi khởi động lại dev server.",
+        "Chưa có REPLICATE_API_TOKEN. Thêm ở mục Cài đặt, hoặc đặt biến môi trường REPLICATE_API_TOKEN trong .env.local.",
         "replicate",
       );
     }

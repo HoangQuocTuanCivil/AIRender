@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { secret } from "../settings";
 import {
   ProviderError,
   type ProgressHandler,
@@ -85,7 +86,7 @@ export const googleProvider: RenderProvider = {
   apiKeyEnv: "GEMINI_API_KEY",
 
   isConfigured() {
-    return Boolean(process.env.GEMINI_API_KEY);
+    return Boolean(secret("GEMINI_API_KEY"));
   },
 
   modelFor() {
@@ -108,10 +109,10 @@ export const googleProvider: RenderProvider = {
     params: RenderParams,
     onProgress?: ProgressHandler,
   ): Promise<RenderOutcome> {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = secret("GEMINI_API_KEY");
     if (!apiKey) {
       throw new ProviderError(
-        "Chưa có GEMINI_API_KEY. Lấy key ở aistudio.google.com/apikey, thêm vào .env.local rồi khởi động lại dev server.",
+        "Chưa có GEMINI_API_KEY. Lấy key ở aistudio.google.com/apikey rồi thêm ở mục Cài đặt.",
         PROVIDER_ID,
       );
     }

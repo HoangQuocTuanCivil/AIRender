@@ -1,4 +1,4 @@
-# AIRender
+# A2ZRender
 
 Web app biến **ảnh 3D (Civil 3D, OpenRoads, Revit, SketchUp), sketch tay hoặc bản vẽ CAD** của công trình **đường bộ · đường sắt · cầu · hầm** thành **ảnh render chân thực** bằng AI — giữ nguyên hình học của thiết kế gốc.
 
@@ -10,12 +10,13 @@ Giao diện theo hệ thiết kế của `vcc-platform` (SGMT Enterprise Brand G
 
 ```bash
 npm install
-cp .env.example .env.local     # mở .env.local, điền FAL_KEY
 npm run db:push
 npm run app
 ```
 
-Mở http://localhost:3000
+Mở http://localhost:3000, vào **Cài đặt** (biểu tượng bánh răng ở thanh trái) và dán `FAL_KEY` vào.
+
+Key nhập trong Cài đặt được lưu vào file SQLite của ứng dụng và có hiệu lực ngay — không cần sửa file, không cần khởi động lại. Ai muốn cấu hình bằng file thì vẫn dùng được `.env.local` (`cp .env.example .env.local`); khi cả hai cùng có, key trong Cài đặt được ưu tiên.
 
 > `npm run app` chạy bản **production**. Dùng nó để làm việc hằng ngày: nhanh hơn và console sạch. `npm run dev` chỉ cần khi đang sửa code — chế độ dev in ra cảnh báo hydration mismatch mỗi lần tải trang nếu bạn có extension bảo mật/chặn quảng cáo chèn thuộc tính vào DOM (`bis_skin_checked`, `__processed_*`). Đó là chẩn đoán của React dành cho lập trình viên, không phải lỗi của app, và không xuất hiện ở bản production.
 
@@ -73,10 +74,10 @@ Thay vì một danh sách preset phẳng, prompt được ghép từ ba trục �
 
 ```
 Loại công trình  ×  Bối cảnh  ×  Ánh sáng
-   23 lựa chọn        8            7        =  1288 tổ hợp
+   23 lựa chọn        9            7        =  1449 tổ hợp
 ```
 
-Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây cầu đó giữa đồng bằng sông Cửu Long lúc trưa là hai ảnh khác hẳn nhau, dù cùng một model. Preset phẳng sẽ cần 1288 mục; ba trục chỉ cần 38.
+Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây cầu đó giữa đồng bằng sông Cửu Long lúc trưa là hai ảnh khác hẳn nhau, dù cùng một model. Preset phẳng sẽ cần 1449 mục; ba trục chỉ cần 39.
 
 **Loại công trình** (23):
 
@@ -88,9 +89,21 @@ Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây c�
 | **Hầm** | Cửa hầm · Trong hầm · Hầm chui đô thị |
 | **Kiến trúc** | Ngoại thất · Nội thất · Phối cảnh tổng thể · Ảnh thi công |
 
-**Bối cảnh** (8) — viết riêng cho địa hình Việt Nam, vì prompt chung chung cho ra rừng thông ôn đới và lề đường kiểu Mỹ:
+**Bối cảnh** (9) — viết riêng cho địa hình Việt Nam, vì prompt chung chung cho ra rừng thông ôn đới và lề đường kiểu Mỹ:
 
-Núi đá vôi Đông Bắc (Cao Bằng, Bắc Kạn, Hà Giang) · Núi rừng Tây Bắc · Đồng bằng Bắc Bộ · Đồng bằng sông Cửu Long · Ven biển miền Trung · Trung du · Đô thị Việt Nam · Không chỉ định
+| Bối cảnh | Vùng |
+|---|---|
+| Núi đá vôi Đông Bắc | Cao Bằng, Bắc Kạn, Lạng Sơn, Hà Giang — núi đá dựng đứng |
+| Núi rừng Tây Bắc | Sơn La, Lai Châu, Yên Bái — núi đất, ruộng bậc thang |
+| Đồng bằng Bắc Bộ | Đồng bằng sông Hồng — ruộng lúa, tre, làng mạc |
+| Đồng bằng sông Cửu Long | Miền Tây — kênh rạch, dừa nước |
+| Ven biển miền Trung | Bãi biển, cồn cát, phi lao — cảnh **ngoài đô thị** |
+| **Đô thị miền Trung (Đà Nẵng)** | Đà Nẵng, Huế, Quy Nhơn — đại lộ rộng, dải phân cách trồng cây, sông Hàn và cầu, núi Sơn Trà/Trường Sơn làm nền |
+| Trung du | Phú Thọ, Thái Nguyên — đồi chè, keo, đất đỏ |
+| Đô thị Việt Nam | Hà Nội, TP.HCM — nhà ống, dây điện, xe máy dày đặc |
+| Không chỉ định | Để AI tự chọn theo ảnh nguồn |
+
+> **Đà Nẵng khác hẳn "Đô thị Việt Nam".** Preset đô thị chung mô tả nhà ống san sát và giao thông xe máy hỗn loạn kiểu Hà Nội / TP.HCM. Đà Nẵng là đô thị ven biển quy hoạch bài bản: đường rộng, vỉa hè lát đá, nhà thấp tầng hiện đại, giao thông thưa và trật tự hơn — dùng nhầm preset sẽ cho ra cảnh sai hẳn vùng miền.
 
 **Ánh sáng** (7): Nắng ban ngày · Trời nhiều mây · Hoàng hôn vàng · Chạng vạng xanh · Ban đêm · Sương sớm · Sau mưa
 
@@ -166,6 +179,20 @@ Cần render nhiều góc của cùng một dự án mà vẫn đồng nhất v�
 
 ---
 
+## Cài đặt
+
+Màn **Cài đặt** (bánh răng ở thanh trái) có hai phần.
+
+**API key.** Mỗi key kèm nhãn cho biết nó mở những engine nào, đường dẫn lấy key, và nguồn đang dùng: *key ở đây* (nhập trong Cài đặt) · *.env.local* (biến môi trường) · *chưa có*. Nhập key mới là ghi đè; nút thùng rác xoá key đã lưu và quay về dùng biến môi trường nếu có. Key hiển thị lại dưới dạng che, chỉ còn 4 ký tự cuối để phân biệt.
+
+Danh sách key sinh ra từ chính danh sách provider, nên thêm engine mới là key của nó tự xuất hiện ở đây. Hai engine chạy trên fal dùng chung `FAL_KEY` nên chỉ hỏi một lần.
+
+> Key nằm trong bảng `Setting` của file SQLite, **không mã hoá** — cùng mức bảo vệ như `.env.local`. Công cụ chạy local một người dùng; đừng expose ra internet nguyên trạng.
+
+**Nhận diện ứng dụng.** Icon ở đầu thanh điều hướng có thể thay bằng ảnh của bạn (PNG · JPG · WebP · AVIF, tối đa 2 MB, ảnh vuông cho kết quả tốt nhất). Ảnh lưu trong `storage/branding/` và phục vụ qua cùng route ảnh có chặn path traversal. Nút **Mặc định** gỡ ảnh, trả về huy hiệu chữ.
+
+---
+
 ## Kiến trúc
 
 ```
@@ -173,6 +200,7 @@ src/
 ├── app/
 │   ├── page.tsx                    Studio
 │   ├── history/page.tsx            Thư viện
+│   ├── settings/page.tsx           Cài đặt
 │   └── api/
 │       ├── upload/                 POST — nhận ảnh nguồn
 │       ├── render/                 POST — tạo job, trả 202 ngay
@@ -180,15 +208,20 @@ src/
 │       ├── history/                GET  — phân trang cursor
 │       ├── history/[id]/           PATCH ghim · DELETE xoá
 │       ├── providers/              GET  — provider nào có key
+│       ├── settings/               GET  — key + icon · PUT lưu/xoá key
+│       ├── settings/icon/          POST đổi icon · DELETE về mặc định
 │       └── files/[...path]/        GET  — ảnh từ storage/ (chặn path traversal)
 ├── components/
 │   ├── app-shell.tsx               Rail + header + theme toggle
 │   ├── control-panel.tsx           3 trục + ControlNet + độ phân giải
+│   ├── settings-client.tsx         Màn Cài đặt
 │   └── ui.tsx                      Button / Panel / Badge theo idiom vcc-platform
 └── lib/
     ├── providers/                  Adapter — fal.ai, Replicate
     ├── presets.ts                  Thư viện prompt 3 trục
     ├── jobs.ts                     Job runner nền
+    ├── settings.ts                 Key + icon lưu trong SQLite
+    ├── brand.ts                    Tên app, huy hiệu mặc định
     ├── storage.ts                  Lưu/đọc ảnh, chặn path traversal
     ├── theme.ts                    Token sáng/tối, script chống nháy
     └── db.ts                       Prisma client (SQLite)
@@ -223,8 +256,9 @@ Port từ `vcc-platform` — repo đó là Vite + Ant Design, nên chỉ ngôn n
 | Thứ | Ở đâu | Trong git? |
 |---|---|---|
 | Ảnh nguồn / ảnh render | `storage/` | Không |
+| Icon ứng dụng | `storage/branding/` | Không |
 | Lịch sử render | `prisma/dev.db` | Không |
-| API key | `.env.local` | Không |
+| API key | `prisma/dev.db` (bảng `Setting`), hoặc `.env.local` | Không |
 
 Đổi chỗ lưu ảnh bằng `STORAGE_DIR`. Ảnh **không** nằm trong `public/` — phục vụ qua `/api/files/[...path]` có chặn path traversal.
 
@@ -241,7 +275,7 @@ npm run build          # prisma generate + next build
 npm start              # chạy bản đã build sẵn
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint
-npm run check:presets  # kiểm tra thư viện prompt (1288 tổ hợp)
+npm run check:presets  # kiểm tra thư viện prompt (1449 tổ hợp)
 npm run db:push        # đồng bộ schema → SQLite
 npm run db:studio      # GUI xem database
 ```
@@ -254,7 +288,7 @@ npm run db:studio      # GUI xem database
 
 | Triệu chứng | Xử lý |
 |---|---|
-| Banner đỏ "Chưa cấu hình API key" | Chưa có `.env.local`, hoặc chưa khởi động lại server. Next chỉ đọc env lúc khởi động. |
+| Banner đỏ "Chưa cấu hình API key" | Chưa có key nào. Vào **Cài đặt** dán key vào — có hiệu lực ngay. Nếu dùng `.env.local` thì phải khởi động lại server, vì Next chỉ đọc env lúc khởi động. |
 | Console báo `hydration mismatch`, thấy `bis_skin_checked` / `__processed_*` | Extension trình duyệt chèn thuộc tính vào DOM trước khi React chạy. Không phải lỗi app — chạy `npm run app` (bản production) là hết, hoặc tắt extension đó cho `localhost`. |
 | `403 User is locked. Exhausted balance` | Hết credit fal.ai — nạp ở https://fal.ai/dashboard/billing |
 | Render qua FLUX chờ vài phút | Endpoint control-LoRA của fal khởi động nguội chậm. Nano Banana nhanh hơn nhiều (~30s). |

@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Images, Moon, Sparkles, Sun } from "lucide-react";
+import { Images, Moon, Settings, Sparkles, Sun } from "lucide-react";
+import { APP_NAME, BRAND_INITIALS } from "@/lib/brand";
 import { applyTheme } from "@/lib/theme";
 import { useThemeMode } from "@/lib/use-theme";
 import { cn } from "@/lib/utils";
@@ -23,13 +24,29 @@ const MODULES = [
     icon: Images,
     color: "#0078a8",
   },
+  // Neutral slate rather than a third brand hue — but light enough to stay
+  // legible as the icon colour and the 3px indicator on the dark navy rail.
+  {
+    key: "settings",
+    href: "/settings",
+    label: "Cài đặt",
+    icon: Settings,
+    color: "#6b7f9e",
+  },
 ] as const;
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  brandIconUrl,
+}: {
+  children: React.ReactNode;
+  /** Icon uploaded in Cài đặt; null falls back to the initials badge. */
+  brandIconUrl?: string | null;
+}) {
   const pathname = usePathname();
   const active = MODULES.find((m) => isActive(pathname, m.href)) ?? MODULES[0];
 
@@ -44,10 +61,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <nav className="vx-rail" aria-label="Khu vực làm việc">
         <Link
           href="/"
-          className="mb-2 grid h-9 w-9 flex-none place-items-center rounded-[var(--radius-control)] bg-white/10 text-[12px] font-bold tracking-tight text-white"
-          aria-label="AIRender — trang chủ"
+          className={cn(
+            "mb-2 grid h-9 w-9 flex-none place-items-center overflow-hidden",
+            "rounded-[var(--radius-control)] text-[11px] font-bold tracking-tight text-white",
+            !brandIconUrl && "bg-white/10",
+          )}
+          aria-label={`${APP_NAME} — trang chủ`}
+          title={APP_NAME}
         >
-          AI
+          {brandIconUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brandIconUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            BRAND_INITIALS
+          )}
         </Link>
 
         {MODULES.map((module) => {
@@ -74,24 +105,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           page scrolls instead of the panel. Same technique as the platform's
           full-height table chain. */}
       <div className="flex min-h-0 min-w-0 flex-col">
-        <AppHeader title={active.label} />
+        <AppHeader />
         <main className="flex min-h-0 flex-1 flex-col bg-page">{children}</main>
       </div>
     </div>
   );
 }
 
-function AppHeader({ title }: { title: string }) {
+function AppHeader() {
   return (
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-5">
-      <div className="flex min-w-0 items-baseline gap-2.5">
-        <h1 className="truncate text-[15px] font-bold tracking-tight text-ink-950">
-          AIRender
-        </h1>
-        <span className="hidden truncate text-[12.5px] text-ink-500 sm:block">
-          {title} · Render hạ tầng bằng AI
-        </span>
-      </div>
+      <h1 className="truncate text-[15px] font-bold tracking-tight text-ink-950">
+        {APP_NAME}
+      </h1>
 
       <span className="flex-1" />
 

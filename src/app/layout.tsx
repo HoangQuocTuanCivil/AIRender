@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
+import { connection } from "next/server";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { getBrandIconUrl } from "@/lib/settings";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -25,14 +28,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIRender — Render hạ tầng bằng AI",
+  title: `${APP_NAME} — ${APP_TAGLINE}`,
   description:
     "Biến ảnh 3D, sketch hoặc bản vẽ CAD của công trình đường bộ, đường sắt, cầu và hầm thành ảnh render chân thực bằng AI.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // The icon is a setting, read through a synchronous SQLite driver. Without
+  // this the query would run during prerendering and the shell would keep
+  // whatever icon was set at build time.
+  await connection();
+  const brandIconUrl = await getBrandIconUrl();
+
   return (
     <html
       lang="vi"
@@ -49,7 +58,7 @@ export default function RootLayout({
           we control, and harmless — but it makes React log a hydration mismatch
           on every load, which buries real warnings. */}
       <body suppressHydrationWarning className="min-h-full bg-page text-ink-950">
-        <AppShell>{children}</AppShell>
+        <AppShell brandIconUrl={brandIconUrl}>{children}</AppShell>
         <Toaster
           position="bottom-right"
           toastOptions={{

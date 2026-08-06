@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
@@ -258,13 +259,19 @@ function MissingKeyWarning({ providers }: { providers: ProviderInfo[] }) {
             Chưa cấu hình API key
           </p>
           <p className="text-[11px] leading-relaxed text-ink-500">
-            Tạo file <code className="font-mono text-ink-950">.env.local</code>{" "}
-            ở thư mục gốc, thêm một trong các key sau rồi khởi động lại dev server:
+            Mở{" "}
+            <Link
+              href="/settings"
+              className="font-medium text-action underline underline-offset-2"
+            >
+              Cài đặt
+            </Link>{" "}
+            và thêm một trong các key sau:
           </p>
           <ul className="space-y-1">
             {providers.map((p) => (
               <li key={p.id} className="text-[11px]">
-                <code className="font-mono text-action">{p.apiKeyEnv}=…</code>{" "}
+                <code className="font-mono text-action">{p.apiKeyEnv}</code>{" "}
                 <a
                   href={p.apiKeyUrl}
                   target="_blank"

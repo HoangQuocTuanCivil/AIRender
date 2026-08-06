@@ -175,7 +175,7 @@ export function ControlPanel({
                 title={
                   item.configured
                     ? item.blurb
-                    : `Cần ${item.apiKeyEnv} trong .env.local`
+                    : `Cần ${item.apiKeyEnv} — thêm ở mục Cài đặt`
                 }
                 className={cn(
                   "w-full rounded-md border px-3 py-2 text-left transition-colors",
