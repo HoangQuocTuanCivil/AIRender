@@ -81,7 +81,9 @@ export function CompareSlider({
         className="pointer-events-none absolute inset-y-0 w-0.5 bg-white/90 shadow-[0_0_12px_rgba(0,0,0,0.6)]"
         style={{ left: `${position}%` }}
       >
-        <div className="absolute top-1/2 left-1/2 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white bg-background/70 backdrop-blur">
+        {/* Fixed dark scrim rather than a theme colour — this sits on top of the
+            image, where the surrounding brightness is the render's, not the UI's. */}
+        <div className="absolute top-1/2 left-1/2 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-2 border-white bg-black/55 backdrop-blur">
           <svg
             viewBox="0 0 24 24"
             className="h-4 w-4 text-white"
@@ -96,10 +98,10 @@ export function CompareSlider({
         </div>
       </div>
 
-      <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded bg-background/75 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-muted backdrop-blur">
+      <span className="pointer-events-none absolute bottom-2.5 left-2.5 rounded-[var(--radius-sm)] bg-black/60 px-2 py-1 text-[10px] font-bold tracking-[0.08em] text-white/85 uppercase backdrop-blur">
         Gốc
       </span>
-      <span className="pointer-events-none absolute right-2.5 bottom-2.5 rounded bg-background/75 px-2 py-1 text-[10px] font-medium uppercase tracking-wider text-accent backdrop-blur">
+      <span className="pointer-events-none absolute right-2.5 bottom-2.5 rounded-[var(--radius-sm)] bg-black/60 px-2 py-1 text-[10px] font-bold tracking-[0.08em] text-white uppercase backdrop-blur">
         Render
       </span>
     </div>

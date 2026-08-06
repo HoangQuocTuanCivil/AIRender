@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { SerialisedRender } from "@/lib/jobs";
-import { getPreset } from "@/lib/presets";
+import { getContext, getLighting, getSubject } from "@/lib/presets";
 import { Badge, Button } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
 import { cn, downloadImage, formatDuration, formatRelativeTime } from "@/lib/utils";
@@ -127,9 +127,11 @@ export function HistoryClient() {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <div className="flex items-center gap-3 border-b border-border px-5 py-3">
-        <h1 className="text-sm font-semibold">Thư viện render</h1>
-        <span className="text-xs text-muted">{items.length} mục</span>
+      <div className="flex items-center gap-3 border-b border-border bg-surface px-6 py-3">
+        <h1 className="text-[19px] leading-[1.25] font-bold text-ink-950">
+          Thư viện render
+        </h1>
+        <span className="text-[12.5px] text-ink-500">{items.length} mục</span>
 
         <div className="ml-auto flex gap-1.5">
           <Button
@@ -150,17 +152,17 @@ export function HistoryClient() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-muted" />
+          <Loader2 className="h-5 w-5 animate-spin text-ink-500" />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-2.5 p-8 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full bg-surface-2 text-muted">
+          <div className="grid h-14 w-14 place-items-center rounded-full bg-surface-2 text-ink-500">
             <Images className="h-7 w-7" />
           </div>
           <p className="text-sm font-medium">
             {onlyFavorites ? "Chưa có mục yêu thích" : "Thư viện đang trống"}
           </p>
-          <p className="max-w-sm text-[12px] leading-relaxed text-muted">
+          <p className="max-w-sm text-[12px] leading-relaxed text-ink-500">
             {onlyFavorites
               ? "Bấm ngôi sao trên một render để ghim nó vào đây."
               : "Mọi lần render sẽ tự động được lưu lại ở đây."}
@@ -225,10 +227,12 @@ function HistoryCard({
 }) {
   const thumb = item.outputUrls[0] ?? item.sourceUrl;
   const failed = item.status === "failed";
-  const preset = getPreset(item.presetId);
+  const subject = getSubject(item.presetId);
+  const context = getContext(item.contextId);
+  const lighting = getLighting(item.lightingId);
 
   return (
-    <div className="group overflow-hidden rounded-lg border border-border bg-surface">
+    <div className="group overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface shadow-e1">
       <button
         type="button"
         onClick={onOpen}
@@ -238,7 +242,7 @@ function HistoryCard({
         {failed ? (
           <span className="flex h-full flex-col items-center justify-center gap-1.5 p-3 text-center">
             <TriangleAlert className="h-5 w-5 text-danger" />
-            <span className="line-clamp-3 text-[10px] leading-relaxed text-muted">
+            <span className="line-clamp-3 text-[10px] leading-relaxed text-ink-500">
               {item.error ?? "Thất bại"}
             </span>
           </span>
@@ -252,7 +256,7 @@ function HistoryCard({
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {item.outputUrls.length > 1 ? (
-              <span className="absolute right-2 top-2 rounded bg-background/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+              <span className="absolute right-2 top-2 rounded bg-surface/80 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
                 ×{item.outputUrls.length}
               </span>
             ) : null}
@@ -263,7 +267,7 @@ function HistoryCard({
       <div className="space-y-2 p-2.5">
         <div className="flex items-start gap-1.5">
           <p className="min-w-0 flex-1 truncate text-[12px] font-medium">
-            {preset?.name ?? "Tuỳ chỉnh"}
+            {subject?.name ?? "Tuỳ chỉnh"}
           </p>
           <button
             type="button"
@@ -273,19 +277,25 @@ function HistoryCard({
               "shrink-0 transition-colors",
               item.favorite
                 ? "text-amber-400"
-                : "text-muted opacity-0 group-hover:opacity-100 hover:text-foreground",
+                : "text-ink-500 opacity-0 group-hover:opacity-100 hover:text-ink-950",
             )}
           >
             <Star className={cn("h-3.5 w-3.5", item.favorite && "fill-current")} />
           </button>
         </div>
 
-        <p className="line-clamp-2 text-[10px] leading-relaxed text-muted">
-          {item.prompt}
-        </p>
+        {context || lighting ? (
+          <p className="truncate text-[10px] leading-relaxed text-ink-500">
+            {[context?.name, lighting?.name].filter(Boolean).join(" · ")}
+          </p>
+        ) : (
+          <p className="line-clamp-2 text-[10px] leading-relaxed text-ink-500">
+            {item.prompt}
+          </p>
+        )}
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-muted">
+          <span className="text-[10px] text-ink-500">
             {formatRelativeTime(item.createdAt)}
           </span>
           <div className="ml-auto flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
@@ -336,7 +346,9 @@ function PreviewModal({
   }, [onClose]);
 
   const current = item.outputUrls[selected] ?? item.sourceUrl;
-  const preset = getPreset(item.presetId);
+  const subject = getSubject(item.presetId);
+  const context = getContext(item.contextId);
+  const lighting = getLighting(item.lightingId);
 
   return (
     <div
@@ -359,7 +371,7 @@ function PreviewModal({
                   onClick={() => setSelected(index)}
                   className={cn(
                     "h-14 w-14 overflow-hidden rounded-md border-2 transition-colors",
-                    index === selected ? "border-accent" : "border-border",
+                    index === selected ? "border-action" : "border-border",
                   )}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -373,12 +385,12 @@ function PreviewModal({
         <div className="flex w-72 shrink-0 flex-col gap-3 overflow-y-auto">
           <div className="flex items-center gap-2">
             <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-              {preset?.name ?? "Tuỳ chỉnh"}
+              {subject?.name ?? "Tuỳ chỉnh"}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              className="text-muted hover:text-foreground"
+              className="text-ink-500 hover:text-ink-950"
               aria-label="Đóng"
             >
               <X className="h-4 w-4" />
@@ -394,9 +406,12 @@ function PreviewModal({
             <Badge className="font-mono">
               {item.width}×{item.height}
             </Badge>
+            <Badge className="font-mono">≤{item.maxSide}px</Badge>
           </div>
 
           <div className="space-y-2 rounded-md bg-surface-2 p-2.5">
+            {context ? <Detail label="Bối cảnh" value={context.name} /> : null}
+            {lighting ? <Detail label="Ánh sáng" value={lighting.name} /> : null}
             <Detail label="Prompt" value={item.prompt} mono />
             {item.negativePrompt ? (
               <Detail label="Negative" value={item.negativePrompt} mono />
@@ -467,10 +482,10 @@ function Detail({
 }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-wider text-muted/70">{label}</p>
+      <p className="text-[10px] uppercase tracking-wider text-ink-400">{label}</p>
       <p
         className={cn(
-          "text-[11px] leading-relaxed break-words text-foreground",
+          "text-[11px] leading-relaxed break-words text-ink-950",
           mono && "font-mono",
         )}
       >

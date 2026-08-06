@@ -85,14 +85,14 @@ export function ImageDropzone({
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-background/80 text-muted opacity-0 backdrop-blur transition hover:text-foreground group-hover:opacity-100"
+              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-md bg-surface/80 text-ink-500 opacity-0 backdrop-blur transition hover:text-ink-950 group-hover:opacity-100"
               aria-label="Xoá ảnh nguồn"
             >
               <X className="h-4 w-4" />
             </button>
           )}
         </div>
-        <p className="truncate font-mono text-[11px] text-muted">
+        <p className="truncate font-mono text-[11px] text-ink-500">
           {value.name} · {value.width}×{value.height}
         </p>
       </div>
@@ -123,21 +123,21 @@ export function ImageDropzone({
         }}
         className={cn(
           "flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg",
-          "border border-dashed border-border bg-surface-2/40 px-4 text-center transition-colors",
-          dragging && "border-accent bg-accent/5",
+          "border border-dashed border-border bg-surface-2 px-4 text-center transition-colors",
+          dragging && "border-action bg-module-soft",
           disabled && "pointer-events-none opacity-50",
         )}
       >
         {uploading ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin text-accent" />
-            <p className="text-xs text-muted">Đang tải lên…</p>
+            <Loader2 className="h-5 w-5 animate-spin text-action" />
+            <p className="text-xs text-ink-500">Đang tải lên…</p>
           </>
         ) : (
           <>
-            <ImageUp className="h-6 w-6 text-muted" />
+            <ImageUp className="h-6 w-6 text-ink-500" />
             <p className="text-[13px] font-medium">Kéo thả ảnh vào đây</p>
-            <p className="text-[11px] leading-relaxed text-muted">
+            <p className="text-[11px] leading-relaxed text-ink-500">
               Sketch, ảnh 3D SketchUp/Revit, mặt đứng CAD…
               <br />
               JPG · PNG · WebP · AVIF — tối đa 20 MB

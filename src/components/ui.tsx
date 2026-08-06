@@ -3,6 +3,16 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Component idiom ported from vcc-platform:
+ *   Button  — flat, no shadow, 7px radius, weight 600; secondary is outlined on
+ *             the surface colour, never filled.
+ *   Panel   — surface + 1px hairline border + 8px radius + exactly one shadow
+ *             layer. The platform's guideline is explicit: minimal shadow, no
+ *             glassmorphism in workspace chrome.
+ *   Chip    — borderless, dot-prefixed, 6px radius, 12px/700.
+ */
+
 export function Button({
   children,
   className,
@@ -17,19 +27,18 @@ export function Button({
     <button
       {...props}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors",
-        "disabled:pointer-events-none disabled:opacity-45",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        size === "sm" && "h-8 px-2.5 text-xs",
-        size === "md" && "h-9 px-3.5 text-sm",
-        size === "lg" && "h-11 px-5 text-[15px]",
+        "inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-semibold",
+        "transition-colors disabled:pointer-events-none disabled:opacity-45",
+        // Platform control heights: 34 compact / 40 default.
+        size === "sm" && "h-[34px] px-2.5 text-xs",
+        size === "md" && "h-10 px-3.5 text-[13px]",
+        size === "lg" && "h-11 px-5 text-[14px]",
         variant === "default" &&
-          "border border-border bg-surface-2 text-foreground hover:bg-border",
-        variant === "primary" &&
-          "bg-accent text-white hover:bg-accent-strong shadow-sm",
-        variant === "ghost" && "text-muted hover:bg-surface-2 hover:text-foreground",
+          "border border-ink-300 bg-surface text-ink-800 hover:bg-hover",
+        variant === "primary" && "bg-action text-white hover:bg-action-hover",
+        variant === "ghost" && "text-ink-500 hover:bg-hover hover:text-ink-950",
         variant === "danger" &&
-          "border border-danger/30 bg-danger/10 text-danger hover:bg-danger/20",
+          "border border-danger/35 bg-danger-soft text-danger hover:brightness-95",
         className,
       )}
     >
@@ -51,9 +60,11 @@ export function Field({
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label className="block text-xs font-medium text-foreground">{label}</label>
+      <label className="block text-xs font-semibold text-ink-800">{label}</label>
       {children}
-      {hint ? <p className="text-[11px] leading-relaxed text-muted">{hint}</p> : null}
+      {hint ? (
+        <p className="text-[11px] leading-relaxed text-ink-500">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -82,8 +93,8 @@ export function Slider({
   return (
     <div className="space-y-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <label className="text-xs font-medium text-foreground">{label}</label>
-        <span className="font-mono text-[11px] tabular-nums text-muted">
+        <label className="text-xs font-semibold text-ink-800">{label}</label>
+        <span className="tnum font-mono text-[11px] text-ink-500">
           {format(value)}
         </span>
       </div>
@@ -96,7 +107,9 @@ export function Slider({
         disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
       />
-      {hint ? <p className="text-[11px] leading-relaxed text-muted">{hint}</p> : null}
+      {hint ? (
+        <p className="text-[11px] leading-relaxed text-ink-500">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -109,9 +122,9 @@ export function Textarea({
     <textarea
       {...props}
       className={cn(
-        "w-full resize-y rounded-md border border-border bg-surface-2 px-3 py-2",
-        "text-[13px] leading-relaxed text-foreground placeholder:text-muted/70",
-        "focus:border-accent focus:outline-none",
+        "w-full resize-y rounded-[var(--radius-control)] border border-border bg-surface px-3 py-2",
+        "text-[13px] leading-relaxed text-ink-950 placeholder:text-ink-400",
+        "focus:border-action focus:outline-none focus:ring-3 focus:ring-brand-500/18",
         className,
       )}
     />
@@ -132,13 +145,13 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border bg-surface p-4 space-y-3.5",
+        "space-y-3.5 rounded-[var(--radius-md)] border border-border bg-surface p-4 shadow-e1",
         className,
       )}
     >
       {title ? (
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <h2 className="text-[11px] font-bold tracking-[0.02em] text-ink-700 uppercase">
             {title}
           </h2>
           {action}
@@ -149,27 +162,47 @@ export function Panel({
   );
 }
 
+/**
+ * Status chip. Borderless with a leading dot, matching the platform's
+ * `.ant-tag::before` treatment — the dot carries the semantic colour so the
+ * label stays readable at 11–12px.
+ */
 export function Badge({
   children,
   tone = "neutral",
+  dot = false,
   className,
 }: {
   children: ReactNode;
-  tone?: "neutral" | "accent" | "success" | "danger";
+  tone?: "neutral" | "action" | "success" | "warning" | "danger" | "info";
+  dot?: boolean;
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium",
-        tone === "neutral" && "bg-surface-2 text-muted",
-        tone === "accent" && "bg-accent/15 text-accent",
-        tone === "success" && "bg-success/15 text-success",
-        tone === "danger" && "bg-danger/15 text-danger",
+        "inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] px-2 py-0.5",
+        "text-[11px] font-bold leading-[1.33]",
+        tone === "neutral" && "bg-surface-2 text-ink-700",
+        tone === "action" && "bg-brand-100 text-brand-800",
+        tone === "success" && "bg-success-soft text-success",
+        tone === "warning" && "bg-warning-soft text-warning",
+        tone === "danger" && "bg-danger-soft text-danger",
+        tone === "info" && "bg-info-soft text-info",
         className,
       )}
     >
+      {dot ? (
+        <span className="h-[6px] w-[6px] flex-none rounded-full bg-current" />
+      ) : null}
       {children}
     </span>
+  );
+}
+
+/** Section heading used above a group of panels. */
+export function SectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="px-1 text-[15px] font-extrabold text-brand-800">{children}</h2>
   );
 }

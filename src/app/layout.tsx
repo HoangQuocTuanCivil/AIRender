@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
-import { SiteHeader } from "@/components/site-header";
+import { AppShell } from "@/components/app-shell";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-// Inter carries the `vietnamese` subset; Geist (the CNA default) does not, and
-// diacritics fall back to a system font without it.
+// vcc-platform declares Inter in every font stack but never loads it, so its
+// chrome silently falls back to Segoe UI. Load it properly here — and with the
+// `vietnamese` subset, which Geist (the create-next-app default) does not carry.
 const inter = Inter({
-  variable: "--font-geist-sans",
+  variable: "--font-inter",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
@@ -19,9 +21,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIRender — Render kiến trúc bằng AI",
+  title: "AIRender — Render hạ tầng bằng AI",
   description:
-    "Biến sketch, ảnh 3D hoặc mặt đứng CAD thành ảnh render kiến trúc chân thực bằng AI.",
+    "Biến ảnh 3D, sketch hoặc bản vẽ CAD của công trình đường bộ, đường sắt, cầu và hầm thành ảnh render chân thực bằng AI.",
 };
 
 export default function RootLayout({
@@ -30,19 +32,25 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
+      data-vx-dark="0"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <SiteHeader />
-        <main className="flex-1 min-h-0 flex flex-col">{children}</main>
+      <head>
+        {/* Must run before first paint; see src/lib/theme.ts. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-full bg-page text-ink-950">
+        <AppShell>{children}</AppShell>
         <Toaster
-          theme="dark"
           position="bottom-right"
           toastOptions={{
             style: {
-              background: "var(--surface-2)",
+              background: "var(--surface)",
               border: "1px solid var(--border)",
-              color: "var(--foreground)",
+              color: "var(--ink-950)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-2)",
             },
           }}
         />

@@ -50,6 +50,12 @@ export interface RenderParams {
   numImages: number;
   seed?: number;
   imageSize: ImageSize;
+  /**
+   * Longest output side in pixels. The source aspect ratio is always preserved
+   * — a corridor view rendered at a different aspect than its control image
+   * would drift out of alignment with the geometry it is supposed to follow.
+   */
+  maxSide: number;
   outputFormat: "jpeg" | "png";
 }
 

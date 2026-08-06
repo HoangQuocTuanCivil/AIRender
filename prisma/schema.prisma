@@ -24,7 +24,12 @@ model Render {
   model       String
   controlMode String
 
-  presetId        String?
+  /// The three prompt axes, stored separately so a history entry can be
+  /// replayed or re-composed without re-parsing the flattened prompt.
+  presetId  String?
+  contextId String?
+  lightingId String?
+
   prompt          String
   negativePrompt  String?
   controlStrength Float
@@ -35,7 +40,9 @@ model Render {
   seed            Int?
   width           Int
   height          Int
-  outputFormat    String @default("jpeg")
+  /// Longest requested output side in pixels.
+  maxSide      Int    @default(1440)
+  outputFormat String @default("jpeg")
 
   /// Path relative to the storage root, e.g. "uploads/abc123.png".
   sourcePath String

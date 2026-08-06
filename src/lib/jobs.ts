@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
+import type { Render } from "@/generated/prisma";
 import { prisma } from "./db";
-import { getPreset } from "./presets";
+import { getSubject } from "./presets";
 import { resolveProvider, ProviderError, type ControlMode } from "./providers";
 import {
   RENDERS_DIR,
@@ -17,6 +18,8 @@ export interface RenderRequestInput {
   prompt: string;
   negativePrompt?: string;
   presetId?: string;
+  contextId?: string;
+  lightingId?: string;
   controlMode: ControlMode;
   controlStrength: number;
   strength: number;
@@ -24,6 +27,7 @@ export interface RenderRequestInput {
   steps: number;
   numImages: number;
   seed?: number;
+  maxSide: number;
   outputFormat: "jpeg" | "png";
   providerId?: string;
 }
@@ -71,7 +75,7 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
   }
 
   const id = randomUUID();
-  const preset = getPreset(input.presetId);
+  const subject = getSubject(input.presetId);
 
   await prisma.render.create({
     data: {
@@ -80,7 +84,9 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
       provider: provider.id,
       model: provider.modelFor(input.controlMode),
       controlMode: input.controlMode,
-      presetId: preset?.id ?? null,
+      presetId: subject?.id ?? null,
+      contextId: input.contextId ?? null,
+      lightingId: input.lightingId ?? null,
       prompt: input.prompt,
       negativePrompt: input.negativePrompt || null,
       controlStrength: input.controlStrength,
@@ -91,6 +97,7 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
       seed: input.seed ?? null,
       width: input.width,
       height: input.height,
+      maxSide: input.maxSide,
       outputFormat: input.outputFormat,
       sourcePath: input.sourcePath,
       outputPaths: "[]",
@@ -149,6 +156,7 @@ async function processRender(
         numImages: input.numImages,
         seed: input.seed,
         imageSize: { width: input.width, height: input.height },
+        maxSide: input.maxSide,
         outputFormat: input.outputFormat,
       },
       (event) => {
@@ -222,35 +230,14 @@ async function processRender(
   }
 }
 
-/** Shape returned to the client for both live polling and history listing. */
-export function serialiseRender(
-  record: {
-    id: string;
-    createdAt: Date;
-    status: string;
-    error: string | null;
-    provider: string;
-    model: string;
-    controlMode: string;
-    presetId: string | null;
-    prompt: string;
-    negativePrompt: string | null;
-    controlStrength: number;
-    strength: number;
-    guidanceScale: number;
-    steps: number;
-    numImages: number;
-    seed: number | null;
-    width: number;
-    height: number;
-    outputFormat: string;
-    sourcePath: string;
-    outputPaths: string;
-    durationMs: number | null;
-    favorite: boolean;
-  },
-  live?: LiveJob,
-) {
+/**
+ * Shape returned to the client for both live polling and history listing.
+ *
+ * Takes Prisma's generated row type rather than a hand-written one, so adding a
+ * column to the schema surfaces here as a type error instead of silently
+ * dropping the field from the API response.
+ */
+export function serialiseRender(record: Render, live?: LiveJob) {
   let outputs: string[] = [];
   try {
     outputs = JSON.parse(record.outputPaths) as string[];
@@ -269,6 +256,8 @@ export function serialiseRender(
     model: record.model,
     controlMode: record.controlMode as ControlMode,
     presetId: record.presetId,
+    contextId: record.contextId,
+    lightingId: record.lightingId,
     prompt: record.prompt,
     negativePrompt: record.negativePrompt,
     controlStrength: record.controlStrength,
@@ -279,6 +268,7 @@ export function serialiseRender(
     seed: record.seed,
     width: record.width,
     height: record.height,
+    maxSide: record.maxSide,
     outputFormat: record.outputFormat,
     durationMs: record.durationMs,
     favorite: record.favorite,

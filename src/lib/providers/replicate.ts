@@ -60,7 +60,9 @@ export const replicateProvider: RenderProvider = {
       guidance: params.guidanceScale,
       num_outputs: params.numImages,
       output_format: params.outputFormat,
-      megapixels: "1",
+      // Replicate's FLUX models take a megapixel bucket rather than explicit
+      // dimensions; "1" is ~1024px on the long side, "0.25" is ~512px.
+      megapixels: params.maxSide > 1200 ? "1" : "0.25",
       disable_safety_checker: true,
     };
 

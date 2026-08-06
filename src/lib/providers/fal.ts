@@ -43,11 +43,14 @@ function ensureCredentials() {
   }
 }
 
-/** fal caps generation size; keep both sides sane and on a multiple of 32. */
-function normaliseSize(width: number, height: number) {
-  const MAX_SIDE = 1440;
-  const MIN_SIDE = 512;
-  const scale = Math.min(1, MAX_SIDE / Math.max(width, height));
+/**
+ * Scale to the requested longest side, preserving aspect ratio, snapped to a
+ * multiple of 32 (the latent grid). Only ever scales down — upscaling a small
+ * source adds no detail and just costs more.
+ */
+function normaliseSize(width: number, height: number, maxSide: number) {
+  const MIN_SIDE = 384;
+  const scale = Math.min(1, maxSide / Math.max(width, height));
   const snap = (n: number) =>
     Math.max(MIN_SIDE, Math.round((n * scale) / 32) * 32);
   return { width: snap(width), height: snap(height) };
@@ -110,7 +113,11 @@ export const falProvider: RenderProvider = {
     ensureCredentials();
 
     const model = MODELS[params.controlMode];
-    const size = normaliseSize(params.imageSize.width, params.imageSize.height);
+    const size = normaliseSize(
+      params.imageSize.width,
+      params.imageSize.height,
+      params.maxSide,
+    );
 
     const input: Record<string, unknown> = {
       prompt: params.prompt,

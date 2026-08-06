@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import type { SerialisedRender } from "@/lib/jobs";
+import { RESOLUTION_TIERS, getResolution } from "@/lib/presets";
 import { ImageDropzone, type SourceImage } from "@/components/image-dropzone";
 import {
   ControlPanel,
@@ -103,6 +104,9 @@ export function StudioClient() {
           name: "Ảnh từ thư viện",
         });
         setSettings({
+          subjectId: data.presetId ?? DEFAULT_SETTINGS.subjectId,
+          contextId: data.contextId ?? DEFAULT_SETTINGS.contextId,
+          lightingId: data.lightingId ?? DEFAULT_SETTINGS.lightingId,
           presetId: data.presetId ?? "custom",
           prompt: data.prompt,
           negativePrompt: data.negativePrompt ?? "",
@@ -113,6 +117,9 @@ export function StudioClient() {
           steps: data.steps,
           numImages: data.numImages,
           seed: data.seed,
+          resolutionId:
+            RESOLUTION_TIERS.find((t) => t.maxSide === data.maxSide)?.id ??
+            DEFAULT_SETTINGS.resolutionId,
           outputFormat: data.outputFormat as "jpeg" | "png",
         });
         toast.success("Đã nạp tham số từ thư viện.");
@@ -147,8 +154,9 @@ export function StudioClient() {
           height: source.height,
           prompt: settings.prompt,
           negativePrompt: settings.negativePrompt || undefined,
-          presetId:
-            settings.presetId === "custom" ? undefined : settings.presetId,
+          presetId: settings.subjectId,
+          contextId: settings.contextId,
+          lightingId: settings.lightingId,
           controlMode: settings.controlMode,
           controlStrength: settings.controlStrength,
           strength: settings.strength,
@@ -156,6 +164,7 @@ export function StudioClient() {
           steps: settings.steps,
           numImages: settings.numImages,
           seed: settings.seed ?? undefined,
+          maxSide: getResolution(settings.resolutionId).maxSide,
           outputFormat: settings.outputFormat,
         }),
       });
@@ -181,7 +190,9 @@ export function StudioClient() {
 
   return (
     <div className="flex flex-1 min-h-0">
-      <aside className="w-[360px] shrink-0 overflow-y-auto border-r border-border p-3">
+      {/* Cards on the neutral page colour, as in the platform's content area —
+          white panels need a non-white ground to read as panels. */}
+      <aside className="w-[360px] shrink-0 overflow-y-auto border-r border-border bg-page p-3">
         {noProviderConfigured ? <MissingKeyWarning providers={providers!} /> : null}
 
         <Panel title="Ảnh nguồn" className="mb-3">
@@ -190,7 +201,7 @@ export function StudioClient() {
 
         <ControlPanel settings={settings} onChange={setSettings} disabled={busy} />
 
-        <div className="sticky bottom-0 -mx-3 mt-3 border-t border-border bg-background/95 p-3 backdrop-blur">
+        <div className="sticky bottom-0 -mx-3 mt-3 border-t border-border bg-page/95 p-3 backdrop-blur">
           <Button
             variant="primary"
             size="lg"
@@ -222,26 +233,26 @@ function MissingKeyWarning({ providers }: { providers: ProviderInfo[] }) {
   if (dismissed) return null;
 
   return (
-    <div className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-3">
+    <div className="mb-3 rounded-lg border border-danger/35 bg-danger-soft p-3">
       <div className="flex items-start gap-2">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <p className="text-[12px] font-medium text-foreground">
+          <p className="text-[12px] font-medium text-ink-950">
             Chưa cấu hình API key
           </p>
-          <p className="text-[11px] leading-relaxed text-muted">
-            Tạo file <code className="font-mono text-foreground">.env.local</code>{" "}
+          <p className="text-[11px] leading-relaxed text-ink-500">
+            Tạo file <code className="font-mono text-ink-950">.env.local</code>{" "}
             ở thư mục gốc, thêm một trong các key sau rồi khởi động lại dev server:
           </p>
           <ul className="space-y-1">
             {providers.map((p) => (
               <li key={p.id} className="text-[11px]">
-                <code className="font-mono text-accent">{p.apiKeyEnv}=…</code>{" "}
+                <code className="font-mono text-action">{p.apiKeyEnv}=…</code>{" "}
                 <a
                   href={p.apiKeyUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-muted underline underline-offset-2 hover:text-foreground"
+                  className="text-ink-500 underline underline-offset-2 hover:text-ink-950"
                 >
                   lấy key
                 </a>
@@ -252,7 +263,7 @@ function MissingKeyWarning({ providers }: { providers: ProviderInfo[] }) {
         <button
           type="button"
           onClick={() => setDismissed(true)}
-          className="text-muted hover:text-foreground"
+          className="text-ink-500 hover:text-ink-950"
           aria-label="Đóng"
         >
           <X className="h-3.5 w-3.5" />

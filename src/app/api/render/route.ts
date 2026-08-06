@@ -12,6 +12,8 @@ const bodySchema = z.object({
   prompt: z.string().min(1, "Prompt không được để trống").max(4000),
   negativePrompt: z.string().max(4000).optional(),
   presetId: z.string().optional(),
+  contextId: z.string().optional(),
+  lightingId: z.string().optional(),
   controlMode: z.enum(["canny", "depth", "none"]),
   controlStrength: z.number().min(0).max(1),
   strength: z.number().min(0).max(1),
@@ -19,6 +21,7 @@ const bodySchema = z.object({
   steps: z.number().int().min(4).max(50),
   numImages: z.number().int().min(1).max(4),
   seed: z.number().int().min(0).max(2_147_483_647).optional(),
+  maxSide: z.number().int().min(512).max(2048).default(1440),
   outputFormat: z.enum(["jpeg", "png"]).default("jpeg"),
   providerId: z.string().optional(),
 });

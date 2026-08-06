@@ -62,14 +62,14 @@ export function RenderResult({
         ) : null}
 
         <div className="flex items-center gap-2.5 text-sm">
-          <Loader2 className="h-4 w-4 animate-spin text-accent" />
+          <Loader2 className="h-4 w-4 animate-spin text-action" />
           <span>{render.message ?? "Đang xử lý…"}</span>
-          <span className="font-mono text-xs tabular-nums text-muted">
+          <span className="font-mono text-xs tabular-nums text-ink-500">
             {(elapsed / 1000).toFixed(1)}s
           </span>
         </div>
 
-        <p className="max-w-sm text-center text-[11px] leading-relaxed text-muted">
+        <p className="max-w-sm text-center text-[11px] leading-relaxed text-ink-500">
           Một lần render thường mất 20–60 giây tuỳ hàng đợi của provider. Bạn có
           thể rời trang — kết quả vẫn được lưu vào Thư viện.
         </p>
@@ -119,8 +119,8 @@ export function RenderResult({
               className={cn(
                 "h-16 w-16 overflow-hidden rounded-md border-2 transition-colors",
                 index === selected
-                  ? "border-accent"
-                  : "border-border hover:border-muted",
+                  ? "border-action"
+                  : "border-border hover:border-ink-300",
               )}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -186,13 +186,13 @@ function EmptyState({
       <div
         className={cn(
           "grid h-14 w-14 place-items-center rounded-full",
-          tone === "danger" ? "bg-danger/10" : "bg-surface-2 text-muted",
+          tone === "danger" ? "bg-danger-soft" : "bg-surface-2 text-ink-500",
         )}
       >
         {icon}
       </div>
       <p className="text-sm font-medium">{title}</p>
-      <p className="max-w-sm text-[12px] leading-relaxed break-words text-muted">
+      <p className="max-w-sm text-[12px] leading-relaxed break-words text-ink-500">
         {body}
       </p>
     </div>

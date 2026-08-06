@@ -1,32 +1,167 @@
 @import "tailwindcss";
 
-/* Dark-first: a render tool is judged on the images, and a dark chrome keeps
-   the eye calibrated when comparing before/after. */
+/* ---------------------------------------------------------------------------
+ * Design tokens ported from vcc-platform ("SGMT Enterprise Brand Guidelines v3",
+ * distilled in apps/shell/src/app/theme/brand.ts + brand.css).
+ *
+ * vcc-platform is Vite + Ant Design and styles with hand-written CSS; only the
+ * visual language travels here, not the framework. Two rules from its design doc
+ * (docs/UI-Quy-uoc-giao-dien.md) are load-bearing and kept:
+ *
+ *   1. Both light and dark ship together. Dark is not an afterthought — it flips
+ *      the neutral ramp under the same variable names, so components never need
+ *      per-theme classes.
+ *   2. Module colour appears only at accent points (icon, active tab, one accent
+ *      rule). Page background stays neutral.
+ * ------------------------------------------------------------------------- */
+
 :root {
-  --background: #0b0d10;
-  --surface: #14171c;
-  --surface-2: #1b1f26;
-  --border: #272c35;
-  --foreground: #e8eaed;
-  --muted: #9aa1ad;
-  --accent: #5b8cff;
-  --accent-strong: #3d6fe8;
-  --danger: #f87171;
-  --success: #4ade80;
+  /* Brand ramp — 11 steps */
+  --brand-950: #111a46;
+  --brand-900: #17215b;
+  --brand-800: #22307d;
+  --brand-700: #2e3f9f;
+  --brand-600: #3f55c8;
+  --brand-500: #5267e8;
+  --brand-400: #7485f0;
+  --brand-300: #a3aef6;
+  --brand-200: #ccd2fb;
+  --brand-100: #e9ecfe;
+  --brand-50: #f5f6ff;
+
+  /* Semantic surfaces — light */
+  --page: #f8f9fb;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --hover: #f0f2f5;
+  --border: #dce1e7;
+  --border-strong: #c9d0d9;
+
+  /* Ink ramp — light */
+  --ink-950: #11151d;
+  --ink-800: #242b38;
+  --ink-700: #364052;
+  --ink-500: #5f6b7e;
+  --ink-400: #8a96a8;
+  --ink-300: #b5beca;
+
+  /* Action vs focus are deliberately different tokens: brand-600 carries white
+   * text at 6.28:1, brand-500 only 4.70:1, so brand-500 is focus-only. */
+  --action: var(--brand-600);
+  --action-hover: var(--brand-700);
+  --focus: #5267e8;
+
+  /* Status — foreground / soft background pairs */
+  --success: #146c43;
+  --success-soft: #e2f3e9;
+  --warning: #9a5a00;
+  --warning-soft: #fff0d7;
+  --danger: #b42336;
+  --danger-soft: #fde7ea;
+  --info: #1e5ead;
+  --info-soft: #e5f0fc;
+
+  /* Rail keeps its dark navy in both themes — it is the one constant surface. */
+  --rail: #111a46;
+
+  /* Per-screen accent. Only --module is set inline by the shell; --module-soft
+     is derived from it per theme in the .vx-shell rules below, so an inline
+     value can never pin the soft tint to one theme's brightness. */
+  --module: #4c51bf;
+
+  --shadow-1: 0 1px 2px rgba(10, 13, 20, 0.06);
+  --shadow-2: 0 8px 24px rgba(10, 13, 20, 0.08);
+  --shadow-3: 0 18px 48px rgba(10, 13, 20, 0.12);
+}
+
+[data-vx-dark="1"] {
+  --page: #10151b;
+  --surface: #171e26;
+  --surface-2: #212a34;
+  --hover: #212a34;
+  --border: #2a3441;
+  --border-strong: #3a4757;
+
+  --ink-950: #e6edf5;
+  --ink-800: #cfd9e6;
+  --ink-700: #b7c3d2;
+  --ink-500: #94a3b8;
+  --ink-400: #7d8b9e;
+  --ink-300: #3a4757;
+
+  /* brand-800 is never inverted upstream, so anything that used it as text gets
+   * the established substitute instead. */
+  --brand-800: #a3aef6;
+  --brand-100: rgba(99, 121, 234, 0.22);
+  --action: var(--brand-500);
+  --action-hover: var(--brand-400);
+
+  --success: #6fd39a;
+  --success-soft: rgba(27, 127, 80, 0.24);
+  --warning: #ffbe66;
+  --warning-soft: rgba(185, 106, 0, 0.24);
+  --danger: #ff8291;
+  --danger-soft: rgba(204, 51, 71, 0.22);
+  --info: #7fb5f2;
+  --info-soft: rgba(30, 94, 173, 0.26);
+
+  --rail: #0d1220;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 18px 48px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
-  --color-background: var(--background);
+  --color-page: var(--page);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
+  --color-hover: var(--hover);
   --color-border: var(--border);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-danger: var(--danger);
+  --color-border-strong: var(--border-strong);
+  --color-rail: var(--rail);
+
+  --color-ink-950: var(--ink-950);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-500: var(--ink-500);
+  --color-ink-400: var(--ink-400);
+  --color-ink-300: var(--ink-300);
+
+  --color-brand-950: var(--brand-950);
+  --color-brand-800: var(--brand-800);
+  --color-brand-600: var(--brand-600);
+  --color-brand-500: var(--brand-500);
+  --color-brand-100: var(--brand-100);
+
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-focus: var(--focus);
+  --color-module: var(--module);
+  --color-module-soft: var(--module-soft);
+
   --color-success: var(--success);
-  --font-sans: var(--font-geist-sans);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  /* Radius scale: chips 6, controls 7, cards 8, panels 12, tiles 16. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-control: 7px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-e1: var(--shadow-1);
+  --shadow-e2: var(--shadow-2);
+  --shadow-e3: var(--shadow-3);
+
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -36,20 +171,116 @@ body {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  background: var(--page);
+  color: var(--ink-950);
+  font-family: var(--font-inter), ui-sans-serif, -apple-system, "Segoe UI", Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Range inputs get no useful default styling in any browser. */
+/* One focus treatment everywhere, matching the platform. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* --- App shell geometry -------------------------------------------------- */
+
+.vx-shell {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  height: 100dvh;
+
+  /* Derived here, on the same element that carries the inline --module, because
+     a custom property resolves var() against the element it is declared on. */
+  --module-soft: color-mix(in srgb, var(--module) 12%, #ffffff);
+}
+
+[data-vx-dark="1"] .vx-shell {
+  --module-soft: color-mix(in srgb, var(--module) 24%, #171e26);
+}
+
+@media (max-width: 720px) {
+  .vx-shell {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+}
+
+.vx-rail {
+  background: var(--rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 10px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.vx-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.vx-rail-ic {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.vx-rail-ic:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.vx-rail-ic.on {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* 3px module-coloured indicator, inset so it never shifts layout. */
+.vx-rail-ic.on::before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 10px;
+  width: 3px;
+  height: 26px;
+  border-radius: 0 3px 3px 0;
+  background: currentColor;
+}
+
+@media (max-width: 720px) {
+  .vx-rail-ic {
+    width: 38px;
+    height: 38px;
+  }
+  .vx-rail-ic.on::before {
+    left: -9px;
+    height: 20px;
+  }
+}
+
+/* --- Controls ------------------------------------------------------------ */
+
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 4px;
   border-radius: 999px;
-  background: var(--surface-2);
+  background: var(--border);
   outline: none;
 }
 
@@ -59,19 +290,19 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--action);
   cursor: pointer;
-  border: 2px solid var(--background);
-  box-shadow: 0 0 0 1px var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--action);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--action);
   cursor: pointer;
-  border: 2px solid var(--background);
+  border: 2px solid var(--surface);
 }
 
 input[type="range"]:disabled {
@@ -88,13 +319,14 @@ input[type="range"]:disabled {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 999px;
-  border: 3px solid var(--background);
+  background: var(--border-strong);
+  border-radius: 8px;
+  border: 3px solid var(--surface);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #3a414d;
+/* Tabular figures for anything numeric, as on the platform's tables. */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes shimmer {
@@ -111,8 +343,14 @@ input[type="range"]:disabled {
   background-image: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.06),
+    color-mix(in srgb, var(--ink-950) 6%, transparent),
     transparent
   );
   animation: shimmer 1.8s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after {
+    animation-duration: 4s;
+  }
 }
