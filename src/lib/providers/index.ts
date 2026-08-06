@@ -1,4 +1,5 @@
 import { falProvider } from "./fal";
+import { googleProvider } from "./google";
 import { nanoBananaProvider } from "./nano-banana";
 import { replicateProvider } from "./replicate";
 import { ProviderError, type RenderProvider } from "./types";
@@ -9,6 +10,7 @@ export * from "./types";
 const PROVIDERS: RenderProvider[] = [
   falProvider,
   nanoBananaProvider,
+  googleProvider,
   replicateProvider,
 ];
 
