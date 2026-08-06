@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// Prisma 7 moved the connection URL out of the schema — see prisma.config.ts.
+datasource db {
+  provider = "sqlite"
+}
+
+/// One render request and its outcome. Params are stored flat so a history
+/// entry can be replayed verbatim without joining anything.
+model Render {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// pending | running | succeeded | failed
+  status     String @default("pending")
+  durationMs Int?
+  error      String?
+
+  provider    String
+  model       String
+  controlMode String
+
+  presetId        String?
+  prompt          String
+  negativePrompt  String?
+  controlStrength Float
+  strength        Float
+  guidanceScale   Float
+  steps           Int
+  numImages       Int
+  seed            Int?
+  width           Int
+  height          Int
+  outputFormat    String @default("jpeg")
+
+  /// Path relative to the storage root, e.g. "uploads/abc123.png".
+  sourcePath String
+  /// JSON array of storage-relative paths for the generated images.
+  outputPaths String @default("[]")
+
+  /// User-set flag for pinning good results in the library.
+  favorite Boolean @default(false)
+
+  @@index([createdAt])
+  @@index([status])
+}

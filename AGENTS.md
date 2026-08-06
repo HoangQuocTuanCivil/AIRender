@@ -7,3 +7,61 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# AIRender
+
+AI architectural rendering: source image (sketch / clay 3D / CAD elevation) → photoreal render, geometry preserved via ControlNet.
+
+Next.js 16 (App Router) · React 19 · Tailwind v4 · Prisma 7 + SQLite · fal.ai / Replicate.
+
+## Commands
+
+```bash
+npm run dev          # dev server on :3000
+npm run build        # prisma generate && next build
+npm run typecheck    # tsc --noEmit
+npm run lint         # eslint
+npm run db:push      # sync schema.prisma → SQLite
+```
+
+Always run `npm run typecheck && npm run lint` before declaring work done. Both are clean as of the last commit — keep them that way.
+
+## Version-specific gotchas
+
+These bit during the initial build; they are not in most training data.
+
+**Prisma 7** — the connection URL is no longer in `schema.prisma`. It lives in `prisma.config.ts`, and Prisma 7 does *not* auto-load `.env`, so that file calls `process.loadEnvFile()` itself. The runtime client needs an explicit driver adapter (`PrismaBetterSqlite3` — note the lowercase `qlite`, not `SQLite`). Generated client goes to `src/generated/prisma`, is gitignored, and is excluded from ESLint.
+
+**Next 16 / React 19 lint** — `react-hooks/set-state-in-effect` is an *error*, not a warning. Do not call `setState` synchronously in an effect body. Reset child state with a `key` prop instead (see `<RenderResult key={render?.id}>` in `studio-client.tsx`), or set the state from the event handler that caused the change.
+
+**Filesystem tracing** — a top-level `path.resolve(process.cwd(), …)` makes Next trace the whole project into the server bundle. `storage.ts` resolves its root lazily behind `storageRoot()` and marks the `fs` calls with `/* turbopackIgnore: true */`.
+
+**Fonts** — Geist has no `vietnamese` subset. The UI is Vietnamese, so the sans font is Inter. Do not swap it back.
+
+## Architecture rules
+
+**Provider abstraction is load-bearing.** API routes and UI never import `@fal-ai/client` or `replicate` directly — everything goes through `RenderProvider` in `src/lib/providers/types.ts`. To add a backend, implement the interface and append to `PROVIDERS` in `providers/index.ts`; nothing else changes.
+
+**Model endpoint slugs are env-overridable.** fal rotates them. Defaults live in each adapter's `MODELS` map, overridable via `FAL_MODEL_*` / `REPLICATE_MODEL_*`.
+
+**Rendering is a background job, not a long request.** `POST /api/render` writes the DB row, spawns the job, returns `202 {id}`. The client polls `GET /api/render/[id]`. Live progress sits in a `globalThis` `Map` (`src/lib/jobs.ts`); durable state is SQLite. Don't convert this back to a synchronous request — renders take 20–90s.
+
+**Images never go in `public/`.** They live under `storage/` and are served by `/api/files/[...path]`, which rejects any path escaping the storage root. Keep that guard.
+
+**Config errors are 400, not 500.** A missing API key is the caller's problem. `resolveProvider` throws `ProviderError` specifically so the routes answer 400 with an actionable Vietnamese message.
+
+## UI language
+
+All user-facing strings are **Vietnamese**. Code, comments, identifiers, and commit messages are **English**. Model prompts in `presets.ts` are English on purpose — FLUX performs markedly worse on Vietnamese prompts.
+
+## Where things are
+
+| Need to change… | File |
+|---|---|
+| Style presets / prompts | `src/lib/presets.ts` |
+| A provider's request shape | `src/lib/providers/{fal,replicate}.ts` |
+| Job lifecycle, progress messages | `src/lib/jobs.ts` |
+| Studio layout & render submit | `src/components/studio-client.tsx` |
+| ControlNet / advanced controls | `src/components/control-panel.tsx` |
+| Library grid & preview modal | `src/components/history-client.tsx` |
+| Theme tokens | `src/app/globals.css` |
