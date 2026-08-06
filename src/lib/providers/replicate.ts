@@ -1,4 +1,5 @@
 import Replicate from "replicate";
+import { secret } from "../settings";
 import {
   ProviderError,
   type ControlMode,
@@ -30,7 +31,7 @@ export const replicateProvider: RenderProvider = {
   apiKeyEnv: "REPLICATE_API_TOKEN",
 
   isConfigured() {
-    return Boolean(process.env.REPLICATE_API_TOKEN);
+    return Boolean(secret("REPLICATE_API_TOKEN"));
   },
 
   modelFor(mode) {

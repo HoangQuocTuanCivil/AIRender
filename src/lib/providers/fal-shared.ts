@@ -1,4 +1,5 @@
 import { fal } from "@fal-ai/client";
+import { secret } from "../settings";
 import { ProviderError } from "./types";
 
 /**
@@ -6,19 +7,22 @@ import { ProviderError } from "./types";
  * FLUX ControlNet and Nano Banana both authenticate with the same FAL_KEY.
  */
 
-let credentialsConfigured = false;
+/** The client is configured globally, so remember which key is loaded in it. */
+let configuredKey: string | null = null;
 
 export function ensureFalCredentials(providerId: string) {
-  const key = process.env.FAL_KEY;
+  const key = secret("FAL_KEY");
   if (!key) {
     throw new ProviderError(
-      "Chưa có FAL_KEY. Thêm vào file .env.local rồi khởi động lại dev server.",
+      "Chưa có FAL_KEY. Thêm ở mục Cài đặt, hoặc đặt biến môi trường FAL_KEY trong .env.local.",
       providerId,
     );
   }
-  if (!credentialsConfigured) {
+  // Compared, not just flagged: a key replaced in Cài đặt has to reach the
+  // client without a restart.
+  if (configuredKey !== key) {
     fal.config({ credentials: key });
-    credentialsConfigured = true;
+    configuredKey = key;
   }
 }
 

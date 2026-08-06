@@ -1,3 +1,4 @@
+import { secret } from "../settings";
 import {
   fal,
   ensureFalCredentials,
@@ -67,7 +68,7 @@ export const falProvider: RenderProvider = {
   apiKeyEnv: "FAL_KEY",
 
   isConfigured() {
-    return Boolean(process.env.FAL_KEY);
+    return Boolean(secret("FAL_KEY"));
   },
 
   modelFor(mode) {

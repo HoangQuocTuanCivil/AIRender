@@ -1,3 +1,4 @@
+import { secret } from "../settings";
 import {
   fal,
   ensureFalCredentials,
@@ -59,7 +60,7 @@ export const nanoBananaProvider: RenderProvider = {
   apiKeyEnv: "FAL_KEY",
 
   isConfigured() {
-    return Boolean(process.env.FAL_KEY);
+    return Boolean(secret("FAL_KEY"));
   },
 
   // No control modes — the source image is the reference, whatever the mode.

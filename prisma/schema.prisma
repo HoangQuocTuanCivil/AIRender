@@ -8,6 +8,15 @@ datasource db {
   provider = "sqlite"
 }
 
+/// Key/value application settings edited from the Cài đặt screen — API keys and
+/// the brand icon. They live here rather than in .env.local so the tool can be
+/// configured from its own UI, without editing files or restarting the server.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
 /// One render request and its outcome. Params are stored flat so a history
 /// entry can be replayed verbatim without joining anything.
 model Render {
