@@ -10,6 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "check:presets": "tsx scripts/check-presets.ts",
+    "check:imaging": "tsx scripts/check-imaging.ts",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate"
@@ -27,6 +28,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "replicate": "^1.4.0",
+    "sharp": "^0.35.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"

@@ -129,6 +129,30 @@ Muốn AI thử vẽ chữ thật trên biển báo: xoá cụm `all signage and
 
 **Negative prompt** nằm trong mục *Nâng cao* và **không có tác dụng** — cả FLUX lẫn Nano Banana đều bỏ qua, chỉ lưu vào lịch sử.
 
+### Sửa theo vùng — khi ảnh gần đúng nhưng vài chỗ chưa ổn
+
+Render xong, bấm **Sửa vùng** dưới ảnh kết quả. Tô lên phần cần sửa (cọ vẽ hoặc khung), nhập yêu cầu **bằng tiếng Việt**, bấm *Sửa vùng đã chọn*.
+
+**Ngoài vùng khoanh được đảm bảo giữ nguyên — không phải hứa, mà là toán học.** Ảnh cuối được ghép lại: trong vùng lấy kết quả AI, ngoài vùng **sao chép thẳng pixel từ ảnh cũ**, không đi qua model lần nào. Đo trên một lần sửa thật: **0,027% pixel ngoài vùng thay đổi**, và toàn bộ nằm ở dải làm mềm 4px sát viền để mép ghép không lộ.
+
+Cách hoạt động:
+
+```
+Tô vùng  →  cắt vùng + viền đệm  →  engine vẽ lại riêng vùng đó  →  ghép ngược, làm mềm mép
+```
+
+Cắt vùng ra trước khi gửi là điểm mấu chốt về chất lượng: model nhận đúng khu vực đó ở độ phân giải đầy đủ thay vì phải vẽ lại cả khung hình.
+
+| | |
+|---|---|
+| **Nano Banana hiểu tiếng Việt trực tiếp** | Đã kiểm chứng. Cứ viết tiếng Việt, không cần dịch. |
+| Engine FLUX | Không hiểu tiếng Việt — câu lệnh được **dịch tự động** (cần `GEMINI_API_KEY`). |
+| **FLUX Fill** | Engine duy nhất nhận vùng khoanh trực tiếp nên mép hoà mượt nhất. Chỉ xuất hiện trong hộp thoại sửa vùng. |
+
+Sửa được **nhiều vòng**: kết quả sửa lại trở thành ảnh gốc cho lần sửa tiếp theo. Thư viện đánh dấu các bản sửa bằng biểu tượng và có liên kết về ảnh gốc.
+
+Vùng khoanh quá 90% khung hình sẽ bị từ chối — lúc đó nên render lại toàn bộ.
+
 ### Ràng buộc hình học — thứ quyết định độ tin cậy kỹ thuật
 
 Mỗi loại công trình mang theo một **mệnh đề ràng buộc** nhắm đúng chi tiết mà AI hay làm sai ở dạng kết cấu đó:
@@ -277,6 +301,7 @@ npm start              # chạy bản đã build sẵn
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint
 npm run check:presets  # kiểm tra thư viện prompt (1449 tổ hợp)
+npm run check:imaging  # chứng minh ghép ảnh không đụng pixel ngoài vùng khoanh
 npm run db:push        # đồng bộ schema → SQLite
 npm run db:studio      # GUI xem database
 ```

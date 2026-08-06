@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Download,
   Images,
+  Lasso,
   Loader2,
   RefreshCw,
   Star,
@@ -267,6 +268,12 @@ function HistoryCard({
       <div className="space-y-2 p-2.5">
         <div className="flex items-start gap-1.5">
           <p className="min-w-0 flex-1 truncate text-[12px] font-medium">
+            {item.parentId ? (
+              <Lasso
+                className="mr-1 inline h-3 w-3 align-[-1px] text-action"
+                aria-label="Sửa theo vùng"
+              />
+            ) : null}
             {subject?.name ?? "Tuỳ chỉnh"}
           </p>
           <button
@@ -284,7 +291,12 @@ function HistoryCard({
           </button>
         </div>
 
-        {context || lighting ? (
+        {item.parentId ? (
+          <p className="line-clamp-2 text-[10px] leading-relaxed text-ink-500">
+            <span className="font-medium text-action">Sửa vùng:</span>{" "}
+            {item.editInstruction}
+          </p>
+        ) : context || lighting ? (
           <p className="truncate text-[10px] leading-relaxed text-ink-500">
             {[context?.name, lighting?.name].filter(Boolean).join(" · ")}
           </p>
@@ -408,6 +420,21 @@ function PreviewModal({
             </Badge>
             <Badge className="font-mono">≤{item.maxSide}px</Badge>
           </div>
+
+          {item.parentId ? (
+            <div className="space-y-2 rounded-md border border-action/30 bg-module-soft p-2.5">
+              <Detail label="Yêu cầu sửa vùng" value={item.editInstruction ?? ""} />
+              {item.editInstructionEn ? (
+                <Detail label="Đã dịch sang" value={item.editInstructionEn} mono />
+              ) : null}
+              <Link
+                href={`/history?focus=${item.parentId}`}
+                className="inline-block text-[11px] font-medium text-action underline underline-offset-2"
+              >
+                Xem ảnh gốc trước khi sửa
+              </Link>
+            </div>
+          ) : null}
 
           <div className="space-y-2 rounded-md bg-surface-2 p-2.5">
             {context ? <Detail label="Bối cảnh" value={context.name} /> : null}

@@ -31,6 +31,12 @@ export interface ProviderInfo {
   blurb: string;
   configured: boolean;
   supportsControlNet: boolean;
+  /** Accepts a pixel mask and repaints only inside it. */
+  supportsMask: boolean;
+  /** Only usable with a region mask, so hidden from the full-frame picker. */
+  editOnly: boolean;
+  /** Follows a Vietnamese instruction without translation. */
+  understandsVietnamese: boolean;
   promptStyle: PromptStyle;
   apiKeyEnv: string;
   apiKeyUrl: string;
@@ -178,25 +184,27 @@ export function ControlPanel({
   const groupSubjects = SUBJECT_PRESETS.filter((p) => p.group === activeGroup);
   const engine = providers.find((p) => p.id === settings.providerId);
   const usesControlNet = engine?.supportsControlNet ?? true;
+  // editOnly engines (FLUX Fill) need a region mask, which this screen never
+  // has — they belong to the region-edit dialog, not the full-frame render.
+  const usableProviders = providers.filter((p) => p.configured && !p.editOnly);
   // Meaningless on a station platform or a building facade.
   const hasLanes = subjectHasLanes(settings.subjectId);
 
   return (
     <div className="space-y-3">
-      {providers.length > 0 ? (
+      {/* Only engines that can actually run. An engine without its key is not a
+          choice the user can make here — it is a task for Cài đặt, and the
+          studio already raises that banner when nothing is configured. */}
+      {usableProviders.length > 0 ? (
         <Panel title="Công cụ render">
           <div className="space-y-1.5">
-            {providers.map((item) => (
+            {usableProviders.map((item) => (
               <button
                 key={item.id}
                 type="button"
-                disabled={disabled || !item.configured}
+                disabled={disabled}
                 onClick={() => recompose({ providerId: item.id })}
-                title={
-                  item.configured
-                    ? item.blurb
-                    : `Cần ${item.apiKeyEnv} — thêm ở mục Cài đặt`
-                }
+                title={item.blurb}
                 className={cn(
                   "w-full rounded-md border px-3 py-2 text-left transition-colors",
                   "disabled:pointer-events-none disabled:opacity-45",
@@ -205,12 +213,7 @@ export function ControlPanel({
                     : "border-border bg-surface-2 hover:bg-hover",
                 )}
               >
-                <span className="flex items-center gap-2">
-                  <span className="text-[12px] font-medium">{item.label}</span>
-                  {!item.configured ? (
-                    <Badge tone="danger">thiếu key</Badge>
-                  ) : null}
-                </span>
+                <span className="text-[12px] font-medium">{item.label}</span>
                 <span className="mt-0.5 block text-[10px] leading-relaxed text-ink-500">
                   {item.blurb}
                 </span>

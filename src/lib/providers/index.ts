@@ -1,4 +1,5 @@
 import { falProvider } from "./fal";
+import { falFillProvider } from "./fal-fill";
 import { googleProvider } from "./google";
 import { nanoBananaProvider } from "./nano-banana";
 import { replicateProvider } from "./replicate";
@@ -10,6 +11,7 @@ export * from "./types";
 const PROVIDERS: RenderProvider[] = [
   falProvider,
   nanoBananaProvider,
+  falFillProvider,
   googleProvider,
   replicateProvider,
 ];
@@ -67,6 +69,9 @@ export function describeProviders() {
     blurb: p.blurb,
     configured: p.isConfigured(),
     supportsControlNet: p.supportsControlNet,
+    supportsMask: p.supportsMask ?? false,
+    editOnly: p.editOnly ?? false,
+    understandsVietnamese: p.understandsVietnamese ?? false,
     promptStyle: p.promptStyle,
     apiKeyEnv: p.apiKeyEnv,
     apiKeyUrl: p.apiKeyUrl,

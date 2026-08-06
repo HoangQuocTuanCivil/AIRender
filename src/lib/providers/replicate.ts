@@ -26,6 +26,8 @@ export const replicateProvider: RenderProvider = {
   label: "FLUX Tools (Replicate)",
   blurb: "Phương án dự phòng khi fal.ai gặp sự cố. Cùng dòng FLUX ControlNet.",
   supportsControlNet: true,
+  supportsMask: false,
+  understandsVietnamese: false,
   promptStyle: "describe",
   apiKeyUrl: "https://replicate.com/account/api-tokens",
   apiKeyEnv: "REPLICATE_API_TOKEN",

@@ -81,6 +81,8 @@ export const googleProvider: RenderProvider = {
   label: "Nano Banana Pro (Google trực tiếp)",
   blurb: "Cùng model Nano Banana nhưng tính tiền thẳng qua Google, không qua fal.",
   supportsControlNet: false,
+  supportsMask: false,
+  understandsVietnamese: true,
   promptStyle: "instruct",
   apiKeyUrl: "https://aistudio.google.com/apikey",
   apiKeyEnv: "GEMINI_API_KEY",

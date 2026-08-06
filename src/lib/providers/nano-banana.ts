@@ -55,6 +55,11 @@ export const nanoBananaProvider: RenderProvider = {
   label: "Nano Banana Pro (Gemini)",
   blurb: "Giữ nguyên tuyệt đối cấu kiện mảnh — dây văng, cột tiếp xúc, lan can.",
   supportsControlNet: false,
+  // Gemini offers only "conversational masking" — no pixel mask parameter.
+  supportsMask: false,
+  // Verified live: it follows a pure Vietnamese instruction and honours
+  // "keep the rest unchanged", so no translation step is needed for it.
+  understandsVietnamese: true,
   promptStyle: "instruct",
   apiKeyUrl: "https://fal.ai/dashboard/keys",
   apiKeyEnv: "FAL_KEY",

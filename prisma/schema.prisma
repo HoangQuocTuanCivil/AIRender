@@ -69,6 +69,20 @@ model Render {
   /// User-set flag for pinning good results in the library.
   favorite Boolean @default(false)
 
+  /// --- Region edit -------------------------------------------------------
+  /// Set when this render is a masked edit of an earlier one. The chain lets a
+  /// result be corrected in several rounds and still be traced back.
+  parentId String?
+  /// Storage-relative path of the mask, white where the edit was allowed.
+  maskPath String?
+  /// What the user typed, in whatever language they typed it.
+  editInstruction String?
+  /// The English the engine actually received, when a translation happened.
+  editInstructionEn String?
+  /// Region actually sent to the engine, as JSON {left,top,width,height}.
+  editBox String?
+
   @@index([createdAt])
   @@index([status])
+  @@index([parentId])
 }

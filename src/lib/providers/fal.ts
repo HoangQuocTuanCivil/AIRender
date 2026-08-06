@@ -63,6 +63,8 @@ export const falProvider: RenderProvider = {
   label: "FLUX.1 dev + ControlNet",
   blurb: "Có núm vặn độ bám hình khối. Tốt cho khối lớn: đường, hầm, cầu cạn.",
   supportsControlNet: true,
+  supportsMask: false,
+  understandsVietnamese: false,
   promptStyle: "describe",
   apiKeyUrl: "https://fal.ai/dashboard/keys",
   apiKeyEnv: "FAL_KEY",

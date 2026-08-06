@@ -64,6 +64,19 @@ export function getLiveJob(id: string): LiveJob | undefined {
 }
 
 /**
+ * Region edits run their own pipeline (`edit-jobs.ts`) but report progress
+ * through the same registry, so `/api/render/[id]` polls both the same way.
+ */
+export function setLiveJob(id: string, job: LiveJob): void {
+  jobs.set(id, job);
+}
+
+/** Kept briefly after a terminal state so the final poll still sees it. */
+export function clearLiveJob(id: string, afterMs: number): void {
+  setTimeout(() => jobs.delete(id), afterMs).unref?.();
+}
+
+/**
  * Create the DB row, kick off processing, and return immediately so the client
  * can poll. Rendering takes 20–90s; holding the HTTP request open that long
  * costs us progress reporting and trips proxy timeouts.
@@ -286,6 +299,13 @@ export function serialiseRender(record: Render, live?: LiveJob) {
     favorite: record.favorite,
     sourceUrl: publicUrlFor(record.sourcePath),
     outputUrls: outputs.map(publicUrlFor),
+
+    // Region edit. `parentId` present means this render corrects an earlier one.
+    parentId: record.parentId,
+    maskUrl: record.maskPath ? publicUrlFor(record.maskPath) : null,
+    editInstruction: record.editInstruction,
+    editInstructionEn: record.editInstructionEn,
+    editBox: record.editBox,
   };
 }
 

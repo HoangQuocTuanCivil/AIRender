@@ -1,22 +1,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ImageOff, Loader2, TriangleAlert } from "lucide-react";
+import { Download, ImageOff, Lasso, Loader2, TriangleAlert } from "lucide-react";
 import type { SerialisedRender } from "@/lib/jobs";
 import { Badge, Button } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
+import { RegionEditDialog } from "@/components/region-edit-dialog";
+import type { ProviderInfo } from "@/components/control-panel";
 import { cn, downloadImage, formatDuration } from "@/lib/utils";
 import { toast } from "sonner";
 
 export function RenderResult({
   render,
   sourceUrl,
+  providers = [],
+  onEdited,
 }: {
   render: SerialisedRender | null;
   sourceUrl: string | null;
+  /** Engines available for a region edit. */
+  providers?: ProviderInfo[];
+  /** Fired when a region edit finishes, so the studio can show the result. */
+  onEdited?: (result: SerialisedRender) => void;
 }) {
   const [selected, setSelected] = useState(0);
   const [elapsed, setElapsed] = useState(0);
+  const [editing, setEditing] = useState(false);
 
   const running = render?.status === "pending" || render?.status === "running";
 
@@ -153,6 +162,16 @@ export function RenderResult({
           Tải ảnh về
         </Button>
 
+        {providers.some((p) => p.configured) ? (
+          <Button
+            onClick={() => setEditing(true)}
+            title="Khoanh một vùng và chỉ sửa riêng vùng đó"
+          >
+            <Lasso className="h-4 w-4" />
+            Sửa vùng
+          </Button>
+        ) : null}
+
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <Badge tone="success">{formatDuration(render.durationMs)}</Badge>
           <Badge>{render.provider}</Badge>
@@ -167,6 +186,19 @@ export function RenderResult({
           </Badge>
         </div>
       </div>
+
+      {editing ? (
+        <RegionEditDialog
+          render={render}
+          outputIndex={Math.min(selected, outputs.length - 1)}
+          providers={providers}
+          onClose={() => setEditing(false)}
+          onDone={(result) => {
+            setEditing(false);
+            onEdited?.(result);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

@@ -38,6 +38,13 @@ export interface ImageSize {
 export interface RenderParams {
   /** Publicly reachable URL, or a `data:` URI, of the source image. */
   imageUrl: string;
+  /**
+   * Mask for a region edit, white where the model should repaint. Only sent to
+   * engines with `supportsMask`; the others receive a crop of the region and the
+   * result is composited back, which is what actually guarantees the rest of the
+   * frame is untouched.
+   */
+  maskUrl?: string;
   prompt: string;
   negativePrompt?: string;
   controlMode: ControlMode;
@@ -92,6 +99,22 @@ export interface RenderProvider {
    * ControlNet panel rather than showing controls that do nothing.
    */
   supportsControlNet: boolean;
+  /**
+   * True when the engine accepts a pixel mask and repaints only inside it.
+   * Nano Banana does not — Gemini offers "conversational masking" only — so
+   * region edits on those engines rely on crop-and-composite instead.
+   */
+  supportsMask?: boolean;
+  /**
+   * True for engines that only make sense with a region mask. They are hidden
+   * from the studio's engine picker and offered only when editing a region.
+   */
+  editOnly?: boolean;
+  /**
+   * True when the engine follows a Vietnamese instruction directly. Verified
+   * live for Nano Banana; FLUX needs the instruction translated first.
+   */
+  understandsVietnamese?: boolean;
   /**
    * "describe" — a scene description, for text-to-image models steered by a
    * control map. "instruct" — an edit instruction, for models that receive the

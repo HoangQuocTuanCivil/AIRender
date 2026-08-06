@@ -70,6 +70,18 @@ It reads a synchronous in-memory cache because `isConfigured()` is synchronous, 
 
 **Config errors are 400, not 500.** A missing API key is the caller's problem. `resolveProvider` throws `ProviderError` specifically so the routes answer 400 with an actionable Vietnamese message.
 
+## Region editing
+
+**The "everything outside the region is untouched" guarantee comes from `imaging.ts`, not from any model.** `compositeThroughMask` copies pixels outside the mask straight from the parent image; they never pass through an engine. This is not belt-and-braces — the engine that works best here (Nano Banana) accepts no mask at all, and even FLUX Fill returns a freshly encoded frame whose "untouched" areas differ. `npm run check:imaging` asserts zero changed pixels outside the mask, and a live edit measured 0.027% — entirely the 4px feather at the boundary.
+
+The region is **cropped with padding and sent alone**, not sent as a full frame with instructions to change one corner. That gives the model the region at full resolution and gives it surrounding context to match lighting against. `padBox` has a pixel minimum as well as a fraction, because a small scribble grown by a percentage is still too small to render.
+
+`maskBounds` reads the mask server-side rather than trusting a box from the browser: a client could otherwise claim a small box while painting a large area, and the crop and the composite would disagree.
+
+**Nano Banana follows Vietnamese directly** — verified live, including "keep the rest unchanged". `understandsVietnamese` gates the translation step so it only runs for the FLUX family. Do not add a blanket translate-everything step.
+
+`supportsMask` is false for every engine except FLUX Fill, which is `editOnly` and therefore hidden from the studio's engine picker — it cannot render a full frame.
+
 ## Prompt library
 
 `presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 9 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.

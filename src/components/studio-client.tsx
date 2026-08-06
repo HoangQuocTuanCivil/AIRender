@@ -242,6 +242,10 @@ export function StudioClient() {
           key={render?.id ?? "empty"}
           render={render}
           sourceUrl={source?.url ?? null}
+          providers={providers ?? []}
+          // A region edit produces a new render; show it straight away so the
+          // user can keep correcting from the corrected image.
+          onEdited={setRender}
         />
       </div>
     </div>
