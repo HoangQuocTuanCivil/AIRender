@@ -82,3 +82,49 @@ export async function downloadImage(url: string, filename: string) {
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
 }
+
+/**
+ * Downloaded files land in the user's Downloads folder among everything else,
+ * so the name has to identify the render without opening it: product, the date
+ * it was made, then enough of the id to find the row again in the library.
+ */
+export function renderFilename(
+  render: {
+    id: string;
+    createdAt: string;
+    outputFormat: string;
+    outputUrls: string[];
+  },
+  index: number,
+): string {
+  const date = new Date(render.createdAt);
+  const stamp = Number.isNaN(date.getTime())
+    ? ""
+    : [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+      ].join("") + "-";
+  // Only number the files when there is more than one to tell apart.
+  const suffix = render.outputUrls.length > 1 ? `-${index + 1}` : "";
+  return `A2ZRender-${stamp}${render.id.slice(0, 8)}${suffix}.${render.outputFormat}`;
+}
+
+/**
+ * Saves every image of a render. Sequential with a gap between files: Chrome
+ * throttles a burst of programmatic downloads from one gesture and silently
+ * drops the tail, so firing them all at once loses images.
+ */
+export async function downloadRender(render: {
+  id: string;
+  createdAt: string;
+  outputFormat: string;
+  outputUrls: string[];
+}): Promise<void> {
+  for (const [index, url] of render.outputUrls.entries()) {
+    await downloadImage(url, renderFilename(render, index));
+    if (index < render.outputUrls.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+}

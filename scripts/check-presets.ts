@@ -131,6 +131,31 @@ for (const id of ["road-expressway", "bridge-viaduct", "tunnel-interior"]) {
 if (/lanes in total/.test(composePrompt("road-expressway", "none", "daylight")))
   fail("lane clause appears even when no count was given");
 
+// An expressway is a controlled-access facility: the corridor is fenced and no
+// house fronts onto it. The clause has to survive every context, because it is
+// exactly the rural contexts — which describe villages and farmhouses — that
+// otherwise put dwellings on the verge.
+for (const id of ["road-expressway", "road-interchange", "road-toll-plaza"]) {
+  for (const c of CONTEXT_MODIFIERS) {
+    for (const style of ["describe", "instruct"] as const) {
+      const p = composePrompt(id, c.id, "daylight", style);
+      if (!/boundary fence/.test(p))
+        fail(`${id}/${c.id}/${style}: access-control clause missing`);
+      if (!/frontage road/.test(p))
+        fail(`${id}/${c.id}/${style}: frontage road missing from the clause`);
+    }
+  }
+}
+// It must stay off roads that are not access-controlled — a provincial road
+// through a village correctly has houses on the verge.
+for (const id of ["road-urban", "road-mountain", "arch-exterior"]) {
+  if (/boundary fence/.test(composePrompt(id, "paddy-central", "daylight")))
+    fail(`${id}: access-control clause leaked onto an uncontrolled road`);
+}
+// Positive phrasing only — FLUX reads "no houses" as "houses".
+if (/\bno (houses|buildings|dwellings)\b/.test(composePrompt("road-expressway", "none", "daylight")))
+  fail("access-control clause states a constraint negatively");
+
 // Every subject must name the lens a professional would mount, so a user who
 // never opens the quality panel still gets a considered frame.
 for (const s2 of SUBJECT_PRESETS) {

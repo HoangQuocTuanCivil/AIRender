@@ -18,7 +18,44 @@ import type { SerialisedRender } from "@/lib/jobs";
 import { getContext, getLighting, getSubject } from "@/lib/presets";
 import { Badge, Button, Spinner } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
-import { cn, downloadImage, formatDuration, formatRelativeTime } from "@/lib/utils";
+import {
+  cn,
+  downloadImage,
+  downloadRender,
+  formatDuration,
+  formatRelativeTime,
+  renderFilename,
+} from "@/lib/utils";
+
+/**
+ * Saving from the library is the fallback for a render whose images were never
+ * downloaded at the time — so it reports what it did, and reports failure
+ * loudly rather than leaving the user believing the file is on disk.
+ */
+async function saveRender(item: SerialisedRender) {
+  if (item.outputUrls.length === 0) {
+    toast.error("Render này không có ảnh để tải.");
+    return;
+  }
+  const id = toast.loading(
+    item.outputUrls.length > 1
+      ? `Đang tải ${item.outputUrls.length} ảnh…`
+      : "Đang tải ảnh…",
+  );
+  try {
+    await downloadRender(item);
+    toast.success(
+      item.outputUrls.length > 1
+        ? `Đã tải ${item.outputUrls.length} ảnh về máy.`
+        : "Đã tải ảnh về máy.",
+      { id },
+    );
+  } catch {
+    toast.error("Không tải được ảnh. Ảnh có thể đã bị xoá khỏi thư mục lưu.", {
+      id,
+    });
+  }
+}
 
 export function HistoryClient() {
   const [items, setItems] = useState<SerialisedRender[]>([]);
@@ -186,6 +223,7 @@ export function HistoryClient() {
                 onOpen={() => setPreview(item)}
                 onToggleFavorite={() => toggleFavorite(item)}
                 onDelete={() => remove(item)}
+                onDownload={() => saveRender(item)}
               />
             ))}
           </div>
@@ -218,11 +256,13 @@ function HistoryCard({
   onOpen,
   onToggleFavorite,
   onDelete,
+  onDownload,
 }: {
   item: SerialisedRender;
   onOpen: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
+  onDownload: () => void;
 }) {
   const thumb = item.outputUrls[0] ?? item.sourceUrl;
   const failed = item.status === "failed";
@@ -317,6 +357,21 @@ function HistoryCard({
             {formatRelativeTime(item.createdAt)}
           </span>
           <div className="ml-auto flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            {item.outputUrls.length > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={onDownload}
+                title={
+                  item.outputUrls.length > 1
+                    ? `Tải ${item.outputUrls.length} ảnh về máy`
+                    : "Tải ảnh về máy"
+                }
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+            ) : null}
             <Link href={`/?from=${item.id}`} title="Render lại với tham số này">
               <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -461,20 +516,26 @@ function PreviewModal({
           <div className="mt-auto flex flex-col gap-1.5">
             <Button
               variant="primary"
+              disabled={item.outputUrls.length === 0}
               onClick={async () => {
                 try {
-                  await downloadImage(
-                    current,
-                    `airender-${item.id.slice(0, 8)}-${selected + 1}.${item.outputFormat}`,
-                  );
+                  await downloadImage(current, renderFilename(item, selected));
+                  toast.success("Đã tải ảnh về máy.");
                 } catch {
                   toast.error("Không tải được ảnh.");
                 }
               }}
             >
               <Download className="h-4 w-4" />
-              Tải ảnh về
+              {item.outputUrls.length > 1 ? "Tải ảnh đang xem" : "Tải ảnh về"}
             </Button>
+
+            {item.outputUrls.length > 1 ? (
+              <Button onClick={() => saveRender(item)}>
+                <Download className="h-4 w-4" />
+                Tải cả {item.outputUrls.length} ảnh
+              </Button>
+            ) : null}
 
             <Link href={`/?from=${item.id}`} className="contents">
               <Button className="w-full">

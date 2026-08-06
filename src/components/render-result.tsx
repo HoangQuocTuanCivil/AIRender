@@ -7,7 +7,7 @@ import { Badge, Button, Spinner } from "@/components/ui";
 import { CompareSlider } from "@/components/compare-slider";
 import { RegionEditDialog } from "@/components/region-edit-dialog";
 import type { ProviderInfo } from "@/components/control-panel";
-import { cn, downloadImage, formatDuration } from "@/lib/utils";
+import { cn, downloadImage, formatDuration, renderFilename } from "@/lib/utils";
 import { toast } from "sonner";
 
 export function RenderResult({
@@ -179,10 +179,8 @@ export function RenderResult({
           variant="primary"
           onClick={async () => {
             try {
-              await downloadImage(
-                current,
-                `airender-${render.id.slice(0, 8)}-${selected + 1}.${render.outputFormat}`,
-              );
+              await downloadImage(current, renderFilename(render, selected));
+              toast.success("Đã tải ảnh về máy.");
             } catch {
               toast.error("Không tải được ảnh.");
             }

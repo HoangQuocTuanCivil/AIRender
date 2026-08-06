@@ -51,6 +51,13 @@ export interface SubjectPreset {
    * professional frame.
    */
   defaultLens: string;
+  /**
+   * A controlled-access facility: fenced corridor, nothing fronting onto it,
+   * local traffic on a separate frontage road. Adds `ACCESS_CONTROL_CLAUSE` to
+   * the composed prompt — see the note there for why this cannot be left to the
+   * context axis.
+   */
+  accessControlled?: boolean;
 }
 
 export interface ContextModifier {
@@ -97,6 +104,34 @@ const ARCH_TAIL =
 const NO_TEXT_CLAUSE =
   "all signage and information panels rendered as clean blank faces without lettering";
 
+/**
+ * Applied to subjects flagged `accessControlled`.
+ *
+ * Models are trained overwhelmingly on ordinary highways, so they put houses,
+ * shops and driveways right at the pavement edge. On a national route that is
+ * correct; on a cao tốc it is a design error a reviewer spots immediately —
+ * an expressway is fenced along its whole length, nothing fronts onto it, and
+ * every property is reached from a frontage road outside the fence.
+ *
+ * It cannot be fixed on the context axis: the same "Ruộng lúa miền Trung" or
+ * "Đồng bằng Bắc Bộ" landscape is right for a provincial road, where the
+ * farmhouses *do* sit on the verge. What changes is the road, so the clause
+ * belongs to the subject.
+ *
+ * Positive phrasing, like every other constraint here — "no houses beside the
+ * road" reads to FLUX as "houses beside the road", so this says where the
+ * buildings go instead of saying where they may not.
+ */
+const ACCESS_CONTROL_CLAUSE =
+  "a fully access-controlled expressway corridor, a continuous boundary fence " +
+  "running along both sides for the entire length, the land immediately beside " +
+  "the carriageway kept clear and open with only the shoulder, drainage and " +
+  "guardrail on it, every house shop and village standing well back behind the " +
+  "fence in the middle distance across an open buffer strip of fields trees or " +
+  "bare ground wider than the road itself, all buildings facing away onto a " +
+  "separate frontage road outside the fence which carries the local traffic and " +
+  "every driveway, the expressway reached only at grade-separated interchanges";
+
 /** Kept for history entries and for any future SDXL-class provider. */
 const COMMON_NEGATIVE =
   "distorted perspective, warped straight lines, bent verticals, melting geometry, " +
@@ -125,6 +160,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "spacing, W-beam guardrail with regular equally spaced posts, uniform pavement colour without " +
       "patchwork, smooth continuous vertical and horizontal alignment curvature, " +
       NO_TEXT_CLAUSE,
+    accessControlled: true,
     defaultLens: "tele",
     defaults: {
       controlMode: "depth",
@@ -174,6 +210,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "structural piers of the flyovers aligned in regular rows, uniform deck thickness on each " +
       "structure, continuous edge lines on all ramps, clean merge and diverge tapers, " +
       NO_TEXT_CLAUSE,
+    accessControlled: true,
     defaultLens: "drone",
     defaults: {
       controlMode: "depth",
@@ -220,6 +257,7 @@ const ROAD_SUBJECTS: SubjectPreset[] = [
       "toll lanes of identical width in a symmetric arrangement, canopy structural bays evenly " +
       "spaced with consistent depth, booths identical in size and detailing, channelising island " +
       "noses symmetric, " + NO_TEXT_CLAUSE,
+    accessControlled: true,
     defaultLens: "standard",
     defaults: {
       controlMode: "depth",
@@ -1171,6 +1209,10 @@ function composeDescribePrompt(
     lanes ? lanesClause(lanes) : undefined,
     subject.accuracy,
     getContext(contextId)?.prompt,
+    // Straight after the context, which is what it corrects: the Vietnamese
+    // landscapes name villages and farmhouses, and this settles where they sit
+    // relative to a fenced corridor.
+    subject.accessControlled ? ACCESS_CONTROL_CLAUSE : undefined,
     getLighting(lightingId)?.prompt,
     q.season,
     // Project specifics sit just before the camera tail: late enough not to
@@ -1220,6 +1262,12 @@ function composeInstructPrompt(
 
   if (q.traffic) lines.push(`Traffic: ${q.traffic}.`);
   if (context) lines.push(`Environment: ${context}.`);
+  // After the environment line for the same reason as in the describe grammar,
+  // and marked mandatory: an edit model will otherwise keep whatever roadside
+  // buildings the source image already has.
+  if (subject.accessControlled) {
+    lines.push(`Corridor — this is mandatory: ${ACCESS_CONTROL_CLAUSE}.`);
+  }
   if (lighting) lines.push(`Lighting: ${lighting}.`);
   if (q.season) lines.push(`Season: ${q.season}.`);
   if (extra?.trim()) lines.push(`Project specifics: ${extra.trim()}.`);
