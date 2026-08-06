@@ -88,7 +88,7 @@ The region is **cropped with padding and sent alone**, not sent as a full frame 
 
 ## Prompt library
 
-`presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 9 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.
+`presets.ts` composes prompts from three independent axes — Subject × Context × Lighting (23 × 10 × 7). Never flatten this back into a single preset list; the whole point is that a bridge in Cao Bằng karst and the same bridge over the Mekong are different renders from one model.
 
 Every subject carries an `accuracy` clause naming the details that structure type gets wrong (cable spacing, span equality, catenary mast pitch, lane-count continuity). These are **positive** constraints because FLUX.1 dev ignores negative prompts — never move a constraint into `negativePrompt` and consider it handled.
 

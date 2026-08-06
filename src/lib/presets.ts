@@ -750,6 +750,19 @@ export const CONTEXT_MODIFIERS: ContextModifier[] = [
       "distance, bright tropical maritime light and salt haze",
   },
   {
+    id: "paddy-central",
+    name: "Ruộng lúa miền Trung",
+    description:
+      "Quảng Nam, Quảng Ngãi, Huế, Bình Định — đồng lúa hẹp kẹp giữa núi và biển, có mộ phần giữa ruộng.",
+    prompt:
+      "set in the narrow coastal rice plains of central Vietnam, paddy fields on both " +
+      "sides of the road divided into small irregular plots by low earth bunds, the " +
+      "blue Truong Son mountains rising close on one side, scattered family tombs " +
+      "standing among the fields, hay stacks and clumps of bamboo beside tile-roofed " +
+      "farmhouses, water buffalo and farmers working the paddies, casuarina windbreaks " +
+      "on the sandy ground, bright hot maritime light with a hazy horizon",
+  },
+  {
     id: "urban-central-danang",
     name: "Đô thị miền Trung (Đà Nẵng)",
     description:

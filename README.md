@@ -74,10 +74,10 @@ Thay vì một danh sách preset phẳng, prompt được ghép từ ba trục �
 
 ```
 Loại công trình  ×  Bối cảnh  ×  Ánh sáng
-   23 lựa chọn        9            7        =  1449 tổ hợp
+   23 lựa chọn       10            7        =  1610 tổ hợp
 ```
 
-Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây cầu đó giữa đồng bằng sông Cửu Long lúc trưa là hai ảnh khác hẳn nhau, dù cùng một model. Preset phẳng sẽ cần 1449 mục; ba trục chỉ cần 39.
+Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây cầu đó giữa đồng bằng sông Cửu Long lúc trưa là hai ảnh khác hẳn nhau, dù cùng một model. Preset phẳng sẽ cần 1610 mục; ba trục chỉ cần 40.
 
 **Loại công trình** (23):
 
@@ -89,7 +89,7 @@ Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây c�
 | **Hầm** | Cửa hầm · Trong hầm · Hầm chui đô thị |
 | **Kiến trúc** | Ngoại thất · Nội thất · Phối cảnh tổng thể · Ảnh thi công |
 
-**Bối cảnh** (9) — viết riêng cho địa hình Việt Nam, vì prompt chung chung cho ra rừng thông ôn đới và lề đường kiểu Mỹ:
+**Bối cảnh** (10) — viết riêng cho địa hình Việt Nam, vì prompt chung chung cho ra rừng thông ôn đới và lề đường kiểu Mỹ:
 
 | Bối cảnh | Vùng |
 |---|---|
@@ -98,6 +98,7 @@ Cầu dây văng giữa núi đá Cao Bằng lúc hoàng hôn và cùng cây c�
 | Đồng bằng Bắc Bộ | Đồng bằng sông Hồng — ruộng lúa, tre, làng mạc |
 | Đồng bằng sông Cửu Long | Miền Tây — kênh rạch, dừa nước |
 | Ven biển miền Trung | Bãi biển, cồn cát, phi lao — cảnh **ngoài đô thị** |
+| **Ruộng lúa miền Trung** | Quảng Nam, Quảng Ngãi, Huế, Bình Định — đồng lúa hẹp kẹp giữa núi Trường Sơn và biển, thửa nhỏ không đều, mộ phần giữa ruộng |
 | **Đô thị miền Trung (Đà Nẵng)** | Đà Nẵng, Huế, Quy Nhơn — đại lộ rộng, dải phân cách trồng cây, sông Hàn và cầu, núi Sơn Trà/Trường Sơn làm nền |
 | Trung du | Phú Thọ, Thái Nguyên — đồi chè, keo, đất đỏ |
 | Đô thị Việt Nam | Hà Nội, TP.HCM — nhà ống, dây điện, xe máy dày đặc |
@@ -310,7 +311,7 @@ npm run build          # prisma generate + next build
 npm start              # chạy bản đã build sẵn
 npm run typecheck      # tsc --noEmit
 npm run lint           # eslint
-npm run check:presets  # kiểm tra thư viện prompt (1449 tổ hợp)
+npm run check:presets  # kiểm tra thư viện prompt (1610 tổ hợp)
 npm run check:imaging  # chứng minh ghép ảnh không đụng pixel ngoài vùng khoanh
 npm run db:push        # đồng bộ schema → SQLite
 npm run db:studio      # GUI xem database
