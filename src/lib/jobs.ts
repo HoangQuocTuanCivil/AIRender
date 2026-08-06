@@ -16,6 +16,7 @@ export interface RenderRequestInput {
   width: number;
   height: number;
   prompt: string;
+  extraDetails?: string;
   negativePrompt?: string;
   presetId?: string;
   contextId?: string;
@@ -88,6 +89,7 @@ export async function startRender(input: RenderRequestInput): Promise<string> {
       contextId: input.contextId ?? null,
       lightingId: input.lightingId ?? null,
       prompt: input.prompt,
+      extraDetails: input.extraDetails || null,
       negativePrompt: input.negativePrompt || null,
       controlStrength: input.controlStrength,
       strength: input.strength,
@@ -259,6 +261,7 @@ export function serialiseRender(record: Render, live?: LiveJob) {
     contextId: record.contextId,
     lightingId: record.lightingId,
     prompt: record.prompt,
+    extraDetails: record.extraDetails,
     negativePrompt: record.negativePrompt,
     controlStrength: record.controlStrength,
     strength: record.strength,

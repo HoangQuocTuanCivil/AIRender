@@ -838,6 +838,7 @@ function composeDescribePrompt(
   subject: SubjectPreset,
   contextId: string,
   lightingId: string,
+  extra?: string,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
 
@@ -846,6 +847,9 @@ function composeDescribePrompt(
     subject.accuracy,
     getContext(contextId)?.prompt,
     getLighting(lightingId)?.prompt,
+    // Project specifics sit just before the camera tail: late enough not to
+    // dilute the geometry constraints, early enough to still carry weight.
+    extra,
     tail,
   ]
     .map((part) => part?.trim())
@@ -863,6 +867,7 @@ function composeInstructPrompt(
   subject: SubjectPreset,
   contextId: string,
   lightingId: string,
+  extra?: string,
 ): string {
   const tail = subject.group === "Kiến trúc" ? ARCH_TAIL : INFRA_TAIL;
   const context = getContext(contextId)?.prompt;
@@ -879,6 +884,7 @@ function composeInstructPrompt(
 
   if (context) lines.push(`Environment: ${context}.`);
   if (lighting) lines.push(`Lighting: ${lighting}.`);
+  if (extra?.trim()) lines.push(`Project specifics: ${extra.trim()}.`);
   lines.push(`Look: ${tail}.`);
 
   return lines.join("\n");
@@ -889,13 +895,19 @@ export function composePrompt(
   contextId: string,
   lightingId: string,
   style: PromptStyle = "describe",
+  /**
+   * Free text the user supplies for this project — lane counts, materials,
+   * paint colours. Kept as its own field rather than typed into the composed
+   * prompt so that changing an axis re-composes without discarding it.
+   */
+  extra?: string,
 ): string {
   const subject = getSubject(subjectId);
   if (!subject) return "";
 
   return style === "instruct"
-    ? composeInstructPrompt(subject, contextId, lightingId)
-    : composeDescribePrompt(subject, contextId, lightingId);
+    ? composeInstructPrompt(subject, contextId, lightingId, extra)
+    : composeDescribePrompt(subject, contextId, lightingId, extra);
 }
 
 export function defaultNegativePrompt(): string {

@@ -87,6 +87,25 @@ Núi đá vôi Đông Bắc (Cao Bằng, Bắc Kạn, Hà Giang) · Núi rừng 
 
 > Prompt viết bằng **tiếng Anh** — FLUX cho kết quả kém hơn rõ rệt với tiếng Việt. Giao diện thì hoàn toàn tiếng Việt.
 
+### Chi tiết riêng của dự án
+
+Ba trục lo phần chung. Những gì **chỉ dự án của bạn mới có** thì gõ vào ô **Chi tiết riêng của dự án** — nội dung đó được nối vào prompt và **không bị mất khi đổi trục**.
+
+| Muốn gì | Gõ gì |
+|---|---|
+| Đúng số làn | `exactly 4 lanes in each direction` |
+| Dây văng kiểu đàn hạc | `stay cables in a harp arrangement, all parallel` |
+| Vật liệu cụ thể | `weathering steel girder`, `white architectural concrete piers` |
+| Màu sơn công trình | `pylon painted deep red` |
+| Cây cụ thể | `flowering flamboyant trees along the road` |
+| Thêm hạng mục | `with an overhead sign gantry in the mid-ground` |
+
+**Ô "Prompt đầy đủ" bình thường không cần đụng tới.** Sửa tay ô đó sẽ bật badge *Tuỳ chỉnh*, và lần sau đổi Loại công trình / Bối cảnh / Ánh sáng thì đoạn sửa tay bị ghi đè. Đó chính là lý do tồn tại ô Chi tiết riêng.
+
+Muốn AI thử vẽ chữ thật trên biển báo: xoá cụm `all signage and information panels rendered as clean blank faces without lettering` khỏi ô Prompt đầy đủ.
+
+**Negative prompt** nằm trong mục *Nâng cao* và **không có tác dụng** — cả FLUX lẫn Nano Banana đều bỏ qua, chỉ lưu vào lịch sử.
+
 ### Ràng buộc hình học — thứ quyết định độ tin cậy kỹ thuật
 
 Mỗi loại công trình mang theo một **mệnh đề ràng buộc** nhắm đúng chi tiết mà AI hay làm sai ở dạng kết cấu đó:

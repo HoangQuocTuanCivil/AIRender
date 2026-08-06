@@ -43,6 +43,8 @@ export interface RenderSettings {
   /** Set to CUSTOM_PRESET_ID once the user edits the composed prompt by hand. */
   presetId: string;
   prompt: string;
+  /** Project-specific free text, appended to the composed prompt. */
+  extraDetails: string;
   negativePrompt: string;
   controlMode: ControlMode;
   controlStrength: number;
@@ -71,6 +73,7 @@ function buildDefaults(): RenderSettings {
       DEFAULT_LIGHTING_ID,
       "describe",
     ),
+    extraDetails: "",
     negativePrompt: defaultNegativePrompt(),
     controlMode: subject.defaults.controlMode,
     controlStrength: subject.defaults.controlStrength,
@@ -115,11 +118,13 @@ export function ControlPanel({
     subjectId?: string;
     contextId?: string;
     lightingId?: string;
+    extraDetails?: string;
   }) => {
     const providerId = next.providerId ?? settings.providerId;
     const subjectId = next.subjectId ?? settings.subjectId;
     const contextId = next.contextId ?? settings.contextId;
     const lightingId = next.lightingId ?? settings.lightingId;
+    const extraDetails = next.extraDetails ?? settings.extraDetails;
     const subject = getSubject(subjectId);
 
     // Switching engine also switches prompt grammar: FLUX wants a scene
@@ -133,8 +138,9 @@ export function ControlPanel({
       subjectId,
       contextId,
       lightingId,
+      extraDetails,
       presetId: subjectId,
-      prompt: composePrompt(subjectId, contextId, lightingId, style),
+      prompt: composePrompt(subjectId, contextId, lightingId, style, extraDetails),
       // Switching subject also adopts that structure type's tuning: a
       // cable-stayed bridge needs a much tighter grip than an urban street.
       ...(next.subjectId && subject
@@ -310,10 +316,27 @@ export function ControlPanel({
           ) : null
         }
       >
+        {/* The safe place to type. Held as its own field, so changing an axis
+            re-composes the prompt around it instead of discarding it. */}
+        <Field
+          label="Chi tiết riêng của dự án"
+          hint="Tiếng Anh. Ví dụ: exactly 4 lanes in each direction · weathering steel girder · pylon painted deep red · flowering flamboyant trees. Không mất khi đổi Loại công trình / Bối cảnh / Ánh sáng."
+        >
+          <Textarea
+            rows={3}
+            value={settings.extraDetails}
+            disabled={disabled}
+            placeholder="exactly 4 lanes in each direction, weathering steel girder…"
+            onChange={(event) =>
+              recompose({ extraDetails: event.target.value })
+            }
+          />
+        </Field>
+
         <Field
           label={
             <span className="flex items-center gap-2">
-              Prompt đã ghép
+              Prompt đầy đủ
               {isCustom ? (
                 <Badge tone="action" dot>
                   Tuỳ chỉnh
@@ -321,27 +344,19 @@ export function ControlPanel({
               ) : null}
             </span>
           }
-          hint="Ghép tự động từ Loại công trình + Bối cảnh + Ánh sáng. Sửa tay sẽ chuyển sang chế độ tuỳ chỉnh."
+          hint={
+            isCustom
+              ? "Đang sửa tay. Đổi bất kỳ lựa chọn nào ở trên sẽ ghi đè đoạn bạn vừa gõ — dùng ô Chi tiết riêng để giữ an toàn."
+              : "Ghép tự động từ các lựa chọn ở trên. Bình thường không cần sửa ô này."
+          }
         >
           <Textarea
-            rows={8}
+            rows={7}
             value={settings.prompt}
             disabled={disabled}
             onChange={(event) =>
               patch({ prompt: event.target.value, presetId: CUSTOM_PRESET_ID })
             }
-          />
-        </Field>
-
-        <Field
-          label="Loại trừ (negative prompt)"
-          hint="Không engine nào hiện có dùng trường này — chỉ lưu vào lịch sử. Muốn loại bỏ thứ gì thì diễn đạt thành câu khẳng định trong prompt chính."
-        >
-          <Textarea
-            rows={2}
-            value={settings.negativePrompt}
-            disabled={disabled}
-            onChange={(event) => patch({ negativePrompt: event.target.value })}
           />
         </Field>
       </Panel>
@@ -519,6 +534,21 @@ export function ControlPanel({
                   <RotateCcw className="h-4 w-4" />
                 </Button>
               </div>
+            </Field>
+
+            {/* Kept only because it is stored in history and would become live
+                again behind an SDXL-class provider. Out of the main view so it
+                stops reading as a control that does something. */}
+            <Field
+              label="Loại trừ (negative prompt)"
+              hint="Không engine nào hiện có dùng trường này — FLUX và Nano Banana đều bỏ qua. Muốn loại bỏ thứ gì, hãy diễn đạt thành câu khẳng định trong Chi tiết riêng."
+            >
+              <Textarea
+                rows={2}
+                value={settings.negativePrompt}
+                disabled={disabled}
+                onChange={(event) => patch({ negativePrompt: event.target.value })}
+              />
             </Field>
 
             <Field label="Định dạng ảnh ra">

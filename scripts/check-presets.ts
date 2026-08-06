@@ -85,6 +85,23 @@ if (!/^Turn this engineering source image/.test(instruct))
 if (!instruct.includes("Do not add, remove, relocate or reshape"))
   fail("instruct prompt must carry the hard preservation clause");
 
+// Project specifics must survive into both grammars, and must survive a change
+// of any axis — that is the whole reason the field exists.
+const EXTRA = "exactly 4 lanes in each direction";
+for (const style of ["describe", "instruct"] as const) {
+  for (const ctx of ["none", "karst-northeast", "delta-mekong"]) {
+    for (const lit of ["daylight", "night"]) {
+      const p = composePrompt("road-expressway", ctx, lit, style, EXTRA);
+      if (!p.includes(EXTRA))
+        fail(`${style}/${ctx}/${lit}: project specifics dropped from prompt`);
+    }
+  }
+  // Blank extras must not leave dangling separators or an empty labelled line.
+  const blank = composePrompt("road-expressway", "none", "daylight", style, "  ");
+  if (/,\s*,/.test(blank) || /Project specifics:\s*\./.test(blank))
+    fail(`${style}: blank project specifics left a dangling fragment`);
+}
+
 if (composePrompt("nope", "none", "daylight") !== "")
   fail("unknown subject should compose to an empty string, not throw");
 

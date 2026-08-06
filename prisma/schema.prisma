@@ -30,8 +30,11 @@ model Render {
   contextId String?
   lightingId String?
 
-  prompt          String
-  negativePrompt  String?
+  prompt String
+  /// Free text the user added for this project, kept separate from the composed
+  /// prompt so a replay can re-compose without losing it.
+  extraDetails   String?
+  negativePrompt String?
   controlStrength Float
   strength        Float
   guidanceScale   Float

@@ -10,6 +10,7 @@ const bodySchema = z.object({
   width: z.number().int().min(64).max(8192),
   height: z.number().int().min(64).max(8192),
   prompt: z.string().min(1, "Prompt không được để trống").max(4000),
+  extraDetails: z.string().max(1000).optional(),
   negativePrompt: z.string().max(4000).optional(),
   presetId: z.string().optional(),
   contextId: z.string().optional(),
