@@ -139,9 +139,11 @@ export function Spinner({
         {
           width: size,
           height: size,
-          // Stroke scales with the ring: 3px on a 24px ring is the reference
-          // weight, and a fixed 3px on a 14px ring reads as a filled disc.
-          "--vx-spin-w": `${Math.max(2, Math.round(size / 8))}px`,
+          // Thickness of the crescent, as a length — box-shadow offsets reject
+          // percentages. The source asset's ratio (4px on 200px) would give well
+          // under a pixel at the sizes used here, so it is scaled up and floored
+          // at 2px: below that the crescent stops being visible at all.
+          "--vx-spin-off": `${Math.max(2, Math.round(size * 0.07))}px`,
         } as React.CSSProperties
       }
     />

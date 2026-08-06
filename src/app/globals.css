@@ -63,6 +63,11 @@
 
   /* Rail keeps its dark navy in both themes — it is the one constant surface. */
   --rail: #111a46;
+  /* Also declared on .vx-shell, where the chosen --rail lives and this resolves
+     to the user's colour. Repeating it here means anything rendered outside the
+     shell — a portalled dialog, a toast — still gets a bar-derived colour rather
+     than silently falling back to the raw default. */
+  --bar: color-mix(in srgb, var(--rail) 78%, #0a0d14);
 
   /* Per-screen accent. Only --module is set inline by the shell; --module-soft
      is derived from it per theme in the .vx-shell rules below, so an inline
@@ -235,39 +240,43 @@ body {
   scrollbar-width: none;
 }
 
-/* Loading ring. A conic sweep masked down to a stroke: the tail fades out and
-   the head cuts off sharp, which is what reads as motion once it spins — a
-   uniform ring looks static at any speed.
-   Colour follows the rail colour picked in Cài đặt (--bar, the same darkened
-   value the rail and the palette swatches paint). Add .vx-spin--inherit where
-   the ring sits on a filled button and must take that surface's text colour. */
+/* Loading ring — loading.io's "Eclipse" (https://loading.io), rebuilt from the
+   asset the user supplied.
+
+   The trick is that it is not a stroked ring at all: a circle with no fill
+   carries a hard-edged box-shadow offset downward, and an outer box-shadow is
+   clipped by its own border box. What survives is the sliver of the offset
+   circle poking out below — a crescent, thickest at the bottom and tapering to
+   nothing at the sides. Rotating that reads as a comet tail, where a uniform
+   ring looks static at any speed.
+
+   The rotation origin sits a hair below centre (the original offsets it 2px on
+   a 160px circle), which makes the crescent breathe as it turns instead of
+   tracing a perfect circle.
+
+   Every dimension is a percentage of the box, so one `size` prop scales the
+   whole thing. Colour follows the rail colour picked in Cài đặt; add
+   .vx-spin--inherit where it sits on a filled button and must take that
+   surface's text colour. */
 .vx-spin {
-  --vx-spin-w: 3px;
   --vx-spin-c: var(--bar, var(--rail, #111a46));
+  position: relative;
   display: inline-block;
   flex: none;
+}
+
+.vx-spin::before {
+  content: "";
+  position: absolute;
+  /* Inset so the offset shadow has room and is never clipped by the box. */
+  inset: 10%;
   border-radius: 50%;
-  /* loading.io's "Eclipse": an arc that fades in from nothing and ends on a
-     crisp terminus, rather than a ring of even weight. The 40deg of dead space
-     is what reads as a gap and makes the rotation legible. */
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    transparent 40deg,
-    var(--vx-spin-c) 355deg,
-    var(--vx-spin-c) 360deg
-  );
-  -webkit-mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--vx-spin-w)),
-    #000 0
-  );
-  mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--vx-spin-w)),
-    #000 0
-  );
-  animation: vx-spin 0.8s linear infinite;
+  /* A length, never a percentage — box-shadow offsets reject percentages. The
+     component computes it, because the original's ratio (4px on a 200px asset)
+     yields a sub-pixel crescent at the 28–48px sizes used here. */
+  box-shadow: 0 var(--vx-spin-off, 3px) 0 0 var(--vx-spin-c);
+  transform-origin: 50% 51.25%;
+  animation: vx-spin 1s linear infinite;
 }
 
 .vx-spin--inherit {
@@ -281,8 +290,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .vx-spin {
-    animation-duration: 2.4s;
+  .vx-spin::before {
+    animation-duration: 3s;
   }
 }
 
